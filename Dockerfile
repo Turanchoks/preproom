@@ -15,9 +15,6 @@ ENV POSTGRES_URL=postgres://build:build@localhost:5432/build \
     AUTH_SECRET=build-placeholder \
     NEXT_TELEMETRY_DISABLED=1
 RUN pnpm exec next build
-# Precompile the MCP exercise server (standalone image has no tsx)
-RUN pnpm exec esbuild mcp/exercise-server.ts --bundle --platform=node \
-    --format=cjs --outfile=mcp-dist/exercise-server.cjs
 
 FROM node:22-slim AS run
 WORKDIR /app
@@ -27,6 +24,7 @@ ENV NODE_ENV=production \
 COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static
 COPY --from=build /app/public ./public
-COPY --from=build /app/mcp-dist/exercise-server.cjs ./mcp/exercise-server.cjs
+# Precompiled MCP exercise server (committed artifact; standalone image has no tsx)
+COPY --from=build /app/mcp/exercise-server.cjs ./mcp/exercise-server.cjs
 EXPOSE 8080
 CMD ["node", "server.js"]
