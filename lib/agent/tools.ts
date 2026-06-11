@@ -1,8 +1,21 @@
-import { FunctionTool } from "@google/adk";
+import {
+  AgentTool,
+  type BaseTool,
+  FunctionTool,
+  Gemini,
+  GOOGLE_SEARCH,
+  LlmAgent,
+} from "@google/adk";
 import type { UIMessageStreamWriter } from "ai";
 import type { Session } from "next-auth";
 import { z } from "zod";
 import { documentHandlersByArtifactKind } from "@/lib/artifacts/server";
+import { getExerciseCatalogPayload } from "./exercise-catalog";
+import {
+  type AspectRatio,
+  generateAudioUrl,
+  generateIllustrationUrl,
+} from "./media-bridge";
 import {
   getDocumentsByStudentId,
   getFactsByStudentId,
@@ -110,7 +123,34 @@ async function condensedProfile(ctx: AgentToolContext): Promise<string> {
   return buildStudentProfileBlock(student, facts);
 }
 
-export function buildAgentTools(ctx: AgentToolContext): FunctionTool[] {
+/**
+ * Builds a web_search tool as an AgentTool wrapping a sub-agent that has ONLY
+ * the built-in Google Search tool. ADK forbids mixing the built-in
+ * google_search with function tools on one agent, so we isolate it in a
+ * sub-agent and expose it to the main agent as a callable tool. Returns null if
+ * construction fails (then we simply skip web search).
+ */
+function buildWebSearchTool(ctx: AgentToolContext): AgentTool | null {
+  try {
+    const apiKey =
+      process.env.GOOGLE_GENERATIVE_AI_API_KEY ?? process.env.GOOGLE_API_KEY;
+    const searchAgent = new LlmAgent({
+      name: "web_search",
+      description:
+        "Searches the web (Google) for current, factual, or culture/topic information and returns a concise grounded answer with sources.",
+      model: new Gemini({ model: ctx.modelId, apiKey }),
+      instruction:
+        "You are a focused web-search assistant for a language teacher. Use Google Search to answer the query factually and concisely. Return the key facts plus any source titles/links you used. Do not editorialize.",
+      tools: [GOOGLE_SEARCH],
+    });
+    return new AgentTool({ agent: searchAgent });
+  } catch (err) {
+    console.error("buildWebSearchTool: failed to build web_search tool:", err);
+    return null;
+  }
+}
+
+export function buildAgentTools(ctx: AgentToolContext): BaseTool[] {
   const saveFact = defineTool({
     name: "save_fact",
     description:
@@ -357,7 +397,82 @@ export function buildAgentTools(ctx: AgentToolContext): FunctionTool[] {
     },
   });
 
-  return [
+  const generateIllustration = defineTool({
+    name: "generate_illustration",
+    description:
+      "Generate an illustration (e.g. a vocabulary scene, a flashcard image, a scene to describe) for use in the lesson. Returns Markdown for the image — paste the returned Markdown EXACTLY into your chat reply so it renders inline for the teacher.",
+    parameters: z.object({
+      prompt: z
+        .string()
+        .describe(
+          "A vivid, specific description of the image to generate (subject, style, mood, key vocabulary objects to depict)."
+        ),
+      caption: z
+        .string()
+        .describe("Short caption / alt text for the image."),
+      aspectRatio: z
+        .enum(["1:1", "3:2", "2:3", "4:3", "3:4", "16:9", "9:16"])
+        .optional()
+        .describe("Aspect ratio; defaults to 1:1."),
+    }),
+    execute: async ({ prompt, caption, aspectRatio }) => {
+      try {
+        const url = await generateIllustrationUrl(
+          prompt,
+          (aspectRatio as AspectRatio | undefined) ?? "1:1"
+        );
+        const markdown = `![${caption}](${url})`;
+        return {
+          markdown,
+          instruction:
+            "Paste the `markdown` string verbatim into your reply so the image renders inline. You may add a sentence around it.",
+        };
+      } catch (err) {
+        return { error: err instanceof Error ? err.message : String(err) };
+      }
+    },
+  });
+
+  const generateAudioSnippet = defineTool({
+    name: "generate_audio_snippet",
+    description:
+      "Generate a short text-to-speech audio clip (e.g. a pronunciation model, an example sentence, a listening snippet) in the target language. Returns Markdown for an audio link — paste it into your chat reply so the teacher can play it.",
+    parameters: z.object({
+      text: z
+        .string()
+        .describe("The text to speak. Keep it short (a word, phrase, or sentence)."),
+      language: z
+        .string()
+        .optional()
+        .describe(
+          "Optional BCP-47 language code (e.g. es-ES, fr-FR). If omitted, the language is auto-detected from the text."
+        ),
+    }),
+    execute: async ({ text, language }) => {
+      try {
+        const url = await generateAudioUrl(text, language);
+        const label = text.length > 40 ? `${text.slice(0, 40)}…` : text;
+        const markdown = `[🔊 ${label}](${url})`;
+        return {
+          markdown,
+          instruction:
+            "Paste the `markdown` string into your reply so the teacher can play the audio.",
+        };
+      } catch (err) {
+        return { error: err instanceof Error ? err.message : String(err) };
+      }
+    },
+  });
+
+  const getExerciseCatalog = defineTool({
+    name: "get_exercise_catalog",
+    description:
+      "Get the catalog of interactive exercise types you can generate (with each type's didactic stage, control level, CEFR range, skills, and cognitive budget) plus the pedagogy rubric for sequencing a homework set. Use this to answer what exercises you can create and how to order them by level.",
+    parameters: z.object({}),
+    execute: () => getExerciseCatalogPayload(),
+  });
+
+  const tools: BaseTool[] = [
     saveFact,
     searchMemory,
     getStudentProfile,
@@ -367,5 +482,20 @@ export function buildAgentTools(ctx: AgentToolContext): FunctionTool[] {
     createLessonPlan,
     createHomework,
     updateArtifact,
+    generateIllustration,
+    generateAudioSnippet,
   ];
+
+  // get_exercise_catalog is served over MCP when enabled; otherwise expose the
+  // in-process FunctionTool fallback so the capability always works.
+  if (process.env.MCP_ENABLED === "0") {
+    tools.push(getExerciseCatalog);
+  }
+
+  const webSearch = buildWebSearchTool(ctx);
+  if (webSearch) {
+    tools.push(webSearch);
+  }
+
+  return tools;
 }

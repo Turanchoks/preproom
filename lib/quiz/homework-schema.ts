@@ -79,6 +79,34 @@ export const sentenceMatchingPayloadSchema = z.object({
   correctIndex: z.number().int().min(0),
 });
 
+// listening — components/quiz/exercises/listening.tsx
+// `prompt` is the text spoken aloud (NEVER shown to the student); `audioUrl`
+// is attached in post-processing (lib/media/enrich.ts). An exercise with no
+// resolved audioUrl is dropped by parseHomework so playback never breaks.
+export const listeningPayloadSchema = z.object({
+  prompt: z
+    .string()
+    .describe("Text to be spoken aloud — NOT shown to the student"),
+  question: z.string(),
+  options: z.array(z.string()).min(2).max(6),
+  correctIndex: z.number().int().min(0),
+  audioUrl: z.string().min(1).describe("Public URL of the generated audio clip"),
+  explanation: z.string().optional(),
+});
+
+// image-flashcard — components/quiz/exercises/image-flashcard.tsx
+// `imagePrompt` is the image-generation prompt (NEVER shown); `imageUrl` is
+// attached in post-processing. An exercise with no resolved imageUrl is dropped.
+export const imageFlashcardPayloadSchema = z.object({
+  imagePrompt: z
+    .string()
+    .describe("Image-generation prompt — NOT shown to the student"),
+  word: z.string().describe("The word/meaning the image depicts"),
+  options: z.array(z.string()).min(2).max(6),
+  correctIndex: z.number().int().min(0),
+  imageUrl: z.string().min(1).describe("Public URL of the generated image"),
+});
+
 export const exerciseTypeSchemas = {
   "multiple-choice": multipleChoicePayloadSchema,
   "fill-blank": fillBlankPayloadSchema,
@@ -86,6 +114,8 @@ export const exerciseTypeSchemas = {
   "fill-gaps": fillGapsPayloadSchema,
   "word-puzzle": wordPuzzlePayloadSchema,
   "sentence-matching": sentenceMatchingPayloadSchema,
+  listening: listeningPayloadSchema,
+  "image-flashcard": imageFlashcardPayloadSchema,
 } as const;
 
 export type ExerciseType = keyof typeof exerciseTypeSchemas;

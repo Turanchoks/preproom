@@ -6,26 +6,33 @@ import type { ExerciseFeedbackPayload, ExerciseResult } from "../core/types";
 import { resolveFeedbackPresentation } from "../lib/feedback-presentation";
 import { cn } from "../lib/cn";
 
-export interface MultipleChoicePayload {
-  question: string;
+export interface ImageFlashcardPayload {
+  /** Image-generation prompt — never rendered; only the image is shown. */
+  imagePrompt: string;
+  word: string;
   options: string[];
   correctIndex: number;
-  /** Optional explanation surfaced inside the feedback dialog. */
-  explanation?: string;
+  /** Public URL of the pre-generated image (attached in post-processing). */
+  imageUrl: string;
 }
 
-function isValid(payload: unknown): payload is MultipleChoicePayload {
+function isValid(payload: unknown): payload is ImageFlashcardPayload {
   if (!payload || typeof payload !== "object") return false;
   const p = payload as Record<string, unknown>;
   return (
-    typeof p.question === "string" &&
+    typeof p.imageUrl === "string" &&
+    p.imageUrl.length > 0 &&
     Array.isArray(p.options) &&
     p.options.every((o) => typeof o === "string") &&
     typeof p.correctIndex === "number"
   );
 }
 
-export function MultipleChoiceExercise(props: ExerciseComponentProps) {
+/**
+ * Image flashcard: show a generated picture, the student picks the matching
+ * word/meaning from an options grid. Single-attempt multiple-choice flow.
+ */
+export function ImageFlashcardExercise(props: ExerciseComponentProps) {
   const { exerciseId, payload, interfaceLanguage, onComplete, onStateChange } = props;
   const ok = isValid(payload);
   const data = ok ? payload : null;
@@ -34,7 +41,6 @@ export function MultipleChoiceExercise(props: ExerciseComponentProps) {
   const startedAt = useRef(Date.now());
   const completedRef = useRef(false);
 
-  // Auto-fail invalid payloads so the chain doesn't hang on a busted exercise.
   useEffect(() => {
     if (ok) return;
     onComplete({
@@ -46,7 +52,6 @@ export function MultipleChoiceExercise(props: ExerciseComponentProps) {
     });
   }, [ok, onComplete]);
 
-  // Surface ready-state to the shell so the bottom bar's Check/Next button updates.
   useEffect(() => {
     if (!ok) return;
     onStateChange?.({
@@ -66,7 +71,6 @@ export function MultipleChoiceExercise(props: ExerciseComponentProps) {
       status,
       title: presentation.title,
       emoji: presentation.emoji,
-      hint: data.explanation,
       primaryText: correct
         ? data.options[data.correctIndex]
         : `Correct answer: ${data.options[data.correctIndex]}`,
@@ -76,7 +80,6 @@ export function MultipleChoiceExercise(props: ExerciseComponentProps) {
     };
   }, [committed, selected, data, interfaceLanguage]);
 
-  // Push the feedback payload into the shell, and emit completion exactly once.
   useEffect(() => {
     if (!feedback) return;
     onStateChange?.({
@@ -103,8 +106,14 @@ export function MultipleChoiceExercise(props: ExerciseComponentProps) {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <h2 className="text-2xl font-semibold text-gray-900">{data.question}</h2>
-      <div className="space-y-3">
+      <div className="flex justify-center">
+        <img
+          src={data.imageUrl}
+          alt="What does this picture show?"
+          className="h-56 w-56 rounded-2xl border border-gray-200 object-cover shadow-sm"
+        />
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {data.options.map((opt, idx) => {
           const isSelected = selected === idx;
           const isCorrect = committed && idx === data.correctIndex;
@@ -117,30 +126,15 @@ export function MultipleChoiceExercise(props: ExerciseComponentProps) {
               onClick={() => !committed && setSelected(idx)}
               disabled={committed}
               className={cn(
-                "flex w-full items-center gap-3 rounded-xl border-2 px-4 py-3 text-left text-base transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40",
-                isSelected &&
-                  !committed &&
-                  "border-blue-500 bg-blue-50 ring-2 ring-blue-500/15",
-                !isSelected &&
-                  !committed &&
-                  "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50",
+                "rounded-xl border-2 px-4 py-3 text-center text-base transition",
+                isSelected && !committed && "border-blue-500 bg-blue-50",
+                !isSelected && !committed && "border-gray-200 bg-white hover:border-gray-300",
                 isCorrect && "border-green-500 bg-green-50",
                 isWrong && "border-red-500 bg-red-50",
                 committed && "cursor-default",
               )}
             >
-              <span
-                className={cn(
-                  "flex size-6 shrink-0 items-center justify-center rounded-full border text-xs font-semibold transition-colors",
-                  isSelected && !committed && "border-blue-500 text-blue-600",
-                  !isSelected && !committed && "border-gray-300 text-gray-400",
-                  isCorrect && "border-green-500 bg-green-500 text-white",
-                  isWrong && "border-red-500 bg-red-500 text-white",
-                )}
-              >
-                {String.fromCharCode(65 + idx)}
-              </span>
-              <span className="flex-1">{opt}</span>
+              {opt}
             </button>
           );
         })}
@@ -149,7 +143,7 @@ export function MultipleChoiceExercise(props: ExerciseComponentProps) {
         <button
           type="button"
           onClick={() => setCommitted(true)}
-          className="rounded-xl bg-blue-600 px-6 py-2.5 font-medium text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 active:translate-y-0"
+          className="rounded-xl bg-blue-600 px-6 py-2 font-medium text-white shadow-sm hover:bg-blue-700"
         >
           Check
         </button>
@@ -158,4 +152,4 @@ export function MultipleChoiceExercise(props: ExerciseComponentProps) {
   );
 }
 
-MultipleChoiceExercise.displayName = "MultipleChoiceExercise";
+ImageFlashcardExercise.displayName = "ImageFlashcardExercise";

@@ -79,6 +79,73 @@ export function buildStudentProfileBlock(
   return lines.join("\n");
 }
 
+/**
+ * Compact, embeddable pedagogy rubric (didactic stages, control levels, CEFR
+ * sequencing, cognitive budget). Distilled from docs/harvest/pedagogy-rubric.md
+ * — written to be pasted near-verbatim into a generation system prompt.
+ *
+ * Exported so the homework generator (artifacts/homework/server.ts, owned by
+ * Track G) can import and embed it, keeping a single source of truth for the
+ * rubric across the agent, the MCP catalog, and homework generation.
+ */
+export const PEDAGOGY_RUBRIC = `PEDAGOGICAL AXES — use them to select and order exercises.
+
+didacticStage (where it belongs in a lesson arc):
+- engage: warm-up, activate topic knowledge/curiosity
+- input: learner receives new content, no required response (reading text, dialogue model)
+- language_focus: noticing/explaining forms or words (grammar/vocab explanation, examples)
+- practice: learner manipulates language with known answers (gaps, matching, choice, scramble)
+- production: learner creates own output (writing, open answers, full sentences)
+- assessment: checking mastery; reuse practice formats but score them
+
+controlLevel (how constrained the response is):
+- none: no response (pure input)
+- recognition: pick among options (multiple-choice, matching, sentence-matching)
+- controlled: produce one canonical form (fill a gap, reorder a scrambled sentence)
+- guided: short open response with scaffolding
+- semi_free / free: longer / unconstrained production
+
+cefrUtility — only use an exercise within the CEFR range where it works:
+- A1-A2: image/word matching, binary-choice gaps, sentence scramble, word sorting
+- A2-B1(+B2): fill-gaps (±distractors/audio), word formation, phrase/word matching
+- A2-C1: reading passages, find-mistakes, grammar explanations, open questions
+- B1-C2: sentence rewrite, word-given rephrase, essay prompts, immersion explanations
+
+cognitiveBudget — interaction/presentation load (NOT difficulty). A homework set should be
+mostly cheap items (5-12 pts), a few medium (12-20), at most one heavy (20+); never stack
+several heavy items in a row.
+
+SEQUENCING RULES
+1. Order by stage: engage? -> input -> language_focus -> practice -> production -> assessment?.
+   Homework may skip engage; never put production before its supporting input/practice.
+2. Within practice, increase controlLevel monotonically (recognition -> controlled -> guided);
+   end with at most one semi_free/free production item, and only at A2+.
+3. One new pattern per item — each controlled exercise targets exactly one grammar pattern or
+   lexical set; never mix two new patterns in one item.
+4. Recycle, don't repeat: reuse the same target vocab/grammar in a different format; avoid the
+   same exercise type twice in a row.
+5. Match CEFR: every selected type must include the learner's level in its cefrUtility. A1-A2
+   prefer recognition/controlled; reserve guided/semi_free for A2+, free for B1+.
+6. Self-study only: include only items a learner can complete and check alone (deterministic
+   answers or clearly-marked self-reflection). No pair/group tasks.
+7. Deterministic first: prefer auto-checkable single-canonical-answer items for the bulk of the
+   set; cap open-ended (teacher-reviewed) items at 1-2 per set.
+
+METHODOLOGY (pick one arc per set):
+- ppp: presentation -> controlled practice -> production
+- text_based: input text -> comprehension -> language noticing -> manipulation -> output
+- controlled_to_free: recognition -> controlled -> guided -> semi_free/free
+A good default for post-lesson homework: text_based or controlled_to_free.`;
+
+/**
+ * Returns the pedagogy rubric wrapped as a labelled system-prompt block. Use
+ * inside generation prompts (homework, lesson plans) so the model sequences and
+ * scopes exercises against an evidence-based rubric rather than ad hoc.
+ */
+export function buildPedagogyBlock(): string {
+  return `## Pedagogy rubric (follow when designing exercises/sequences)\n${PEDAGOGY_RUBRIC}`;
+}
+
 function memoryBlock(name: string, facts: StudentFact[]): string {
   if (facts.length === 0) {
     return `## What you know about ${name}\n(You have no durable observations recorded yet. As soon as the teacher reveals anything about ${name}, persist it with the save_fact tool. Use search_memory before claiming you don't know something.)`;
@@ -134,9 +201,11 @@ export function buildSystemPrompt(args: BuildSystemPromptArgs): string {
   const { student, facts, documents, videos, recentTranscript } = args;
   const name = student.name;
 
-  const role = `You are TeachFlow, an AI copilot for a language **teacher**. You are talking to the TEACHER — NOT the student. The teacher (\`${student.name}\`'s instructor) is preparing materials, planning lessons, and reflecting on this student's progress. Address the teacher directly and professionally; never address the student or speak as if the student is in the room.
+  const role = `You are TeachFlow, an expert language-teaching copilot working alongside a human **teacher**. You speak to the TEACHER — never to the student, and never as if the student is in the room. ${name}'s instructor is preparing materials, planning lessons, and reflecting on progress; address them directly, warmly, and professionally, like a sharp co-teacher who has read the whole student file.
 
-Your job: help the teacher understand ${name}, plan effective lessons, and produce ready-to-use teaching materials, all deeply personalized to ${name}.`;
+Your job: help the teacher understand ${name}, make evidence-based suggestions, and produce ready-to-use teaching materials — all deeply personalized to ${name}.
+
+PERSONALIZATION IS THE PRODUCT. Every reply and artifact should visibly draw on what you know about ${name}: their CEFR level, goals, native↔target languages, strengths to leverage, and recurring errors to target. Ground advice in evidence — cite the specific stored fact or lesson-video moment behind a recommendation ("Because Anna keeps dropping past-tense endings, I'd…"), not generic best practice. When the file is thin, search memory and ask one sharp question rather than guessing.`;
 
   const profile = `## Student profile\n${buildStudentProfileBlock(student, facts)}`;
 
@@ -145,7 +214,10 @@ Your job: help the teacher understand ${name}, plan effective lessons, and produ
 - SEARCH FIRST: Before saying you don't know something about ${name}, call **search_memory** to check stored observations. Use **get_student_profile** for a quick refresh and **list_student_artifacts** to see what already exists.
 - VIDEOS: Use **list_videos** and **get_video_analysis** to ground your advice in real lesson footage when relevant.
 - ARTIFACTS, NOT CHAT DUMPS: Create lesson plans with **create_lesson_plan** and interactive homework with **create_homework**. These open a live canvas for the teacher. NEVER paste a lesson plan or homework body into the chat — instead create the artifact and refer to it (e.g. "I've drafted the lesson plan in the canvas"). Revise an existing artifact with **update_artifact** using its id from the artifact index.
-- Personalize every artifact to ${name}: match their CEFR level, lean on strengths, and deliberately target their recurring errors and goals. Pass a rich brief to the artifact tools.
+- MEDIA: When a visual would help (a vocabulary scene, a flashcard illustration, a scene to describe), call **generate_illustration** — it returns Markdown for the image; paste that Markdown EXACTLY into your reply so it renders inline. For pronunciation models or listening snippets, call **generate_audio_snippet** and paste the returned Markdown link. Use media when it adds teaching value, not on every turn.
+- EXERCISE CATALOG: Use **get_exercise_catalog** to ground answers about which exercise types you can build and how to sequence them by CEFR level and didactic stage.
+- WEB FACTS: Use **web_search** for current, factual, or culture/topic look-ups (authentic material ideas, real-world facts to anchor a lesson). Don't use it for things already in the student file.
+- Personalize every artifact to ${name}: match their CEFR level, lean on strengths, and deliberately target their recurring errors and goals; sequence exercises by didactic stage and control level. Pass a rich brief to the artifact tools.
 - Keep chat replies concise and actionable. One artifact tool per turn.`;
 
   return [

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getSharedDocumentBySlug } from "@/lib/db/queries-studio";
@@ -20,14 +21,38 @@ export async function generateMetadata({
 
 function ShareHeader() {
   return (
-    <header className="border-b border-gray-200 bg-white">
+    <header className="sticky top-0 z-10 border-b border-gray-200 bg-white/85 backdrop-blur-md">
       <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4">
-        <span className="text-lg font-bold tracking-tight text-gray-900">
-          Teach<span className="text-blue-600">Flow</span>
+        <Link
+          className="flex items-center gap-2 text-lg font-bold tracking-tight text-gray-900 transition-opacity hover:opacity-80"
+          href="/"
+        >
+          <span className="flex size-6 items-center justify-center rounded-md bg-gray-900 text-[11px] font-bold text-white">
+            T
+          </span>
+          Teach<span className="-ml-2 text-blue-600">Flow</span>
+        </Link>
+        <span className="text-xs font-medium text-gray-400">
+          Shared by your teacher
         </span>
-        <span className="text-xs font-medium text-gray-400">Shared by your teacher</span>
       </div>
     </header>
+  );
+}
+
+function ShareFooter() {
+  return (
+    <footer className="mt-auto border-t border-gray-200/70 py-6">
+      <p className="text-center text-xs text-gray-400">
+        Made with{" "}
+        <Link
+          className="font-medium text-gray-500 transition-colors hover:text-blue-600"
+          href="/"
+        >
+          TeachFlow
+        </Link>
+      </p>
+    </footer>
   );
 }
 
@@ -37,11 +62,14 @@ export default function SharePage({
   params: Promise<{ slug: string }>;
 }) {
   return (
-    <main className="min-h-screen bg-gray-50 text-gray-900">
+    <main className="flex min-h-screen flex-col bg-gray-50 text-gray-900">
       <ShareHeader />
-      <Suspense fallback={<ShareLoading />}>
-        <ShareContent params={params} />
-      </Suspense>
+      <div className="flex-1">
+        <Suspense fallback={<ShareLoading />}>
+          <ShareContent params={params} />
+        </Suspense>
+      </div>
+      <ShareFooter />
     </main>
   );
 }

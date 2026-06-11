@@ -4,12 +4,19 @@ import { guestRegex, isDevelopmentEnvironment } from "./lib/constants";
 
 const PUBLIC_PATHS = ["/", "/ping"];
 
+// Static assets in /public (favicons, marketing imagery, og) are public.
+const PUBLIC_ASSET_RE = /\.(png|jpe?g|svg|ico|webp|gif|avif|txt|xml|woff2?)$/i;
+
 function isPublicPath(pathname: string): boolean {
   if (PUBLIC_PATHS.includes(pathname)) {
     return true;
   }
   // Public share links.
   if (pathname === "/s" || pathname.startsWith("/s/")) {
+    return true;
+  }
+  // Static public assets must load on the unauthenticated landing/share pages.
+  if (PUBLIC_ASSET_RE.test(pathname)) {
     return true;
   }
   return false;

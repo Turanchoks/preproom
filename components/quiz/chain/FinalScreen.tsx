@@ -11,8 +11,10 @@ export function FinalScreen({ onClose }: { onClose?: () => void }) {
     stats.totalExercises === 0 ? 0 : Math.round((stats.correctCount / stats.totalExercises) * 100);
 
   return (
-    <div className="mx-auto max-w-2xl rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-      <h1 className="text-3xl font-bold text-gray-900">{config?.title ?? "All done!"}</h1>
+    <div className="mx-auto max-w-2xl rounded-2xl border border-gray-200/80 bg-white p-8 shadow-[0_1px_3px_rgba(0,0,0,0.06),0_8px_24px_-12px_rgba(0,0,0,0.12)]">
+      <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+        {config?.title ?? "All done!"}
+      </h1>
       <p className="mt-2 text-gray-600">
         {config?.congratsMessage ?? "Great work finishing the homework."}
       </p>
@@ -54,7 +56,7 @@ export function FinalScreen({ onClose }: { onClose?: () => void }) {
         <button
           type="button"
           onClick={onClose}
-          className="mt-6 inline-block rounded-xl bg-blue-600 px-6 py-3 font-medium text-white shadow-sm hover:bg-blue-700"
+          className="mt-6 inline-flex items-center justify-center rounded-xl bg-blue-600 px-6 py-3 font-medium text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 active:translate-y-0"
         >
           Done
         </button>

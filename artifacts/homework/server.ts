@@ -2,6 +2,9 @@ import { streamObject } from "ai";
 import { z } from "zod";
 import { getLanguageModel } from "@/lib/ai/providers";
 import { createDocumentHandler } from "@/lib/artifacts/server";
+import { buildPedagogyBlock } from "@/lib/agent/prompts";
+import { enrichHomework } from "@/lib/media/enrich";
+import type { HomeworkContent } from "@/lib/quiz/homework-schema";
 
 /**
  * Generation schema (NOT the validation contract).
@@ -72,6 +75,43 @@ const generationExerciseSchema = z.discriminatedUnion("type", [
       alternativeAnswers: z.array(z.string()).optional(),
     }),
   }),
+  // Media-backed types: the model generates ONLY text. `prompt`/`imagePrompt`
+  // are fed to TTS / image generation in post-processing (lib/media/enrich.ts),
+  // which attaches audioUrl / imageUrl. Those URL fields are deliberately ABSENT
+  // from the generation schema.
+  z.object({
+    ...baseExerciseFields,
+    type: z.literal("listening"),
+    payload: z.object({
+      prompt: z
+        .string()
+        .describe(
+          "Text spoken aloud by TTS — NOT shown to the student. A word, phrase, or short sentence in the target language."
+        ),
+      question: z
+        .string()
+        .describe("Question shown to the student about what they heard"),
+      options: z.array(z.string()).describe("2-6 answer choices"),
+      correctIndex: z.number().int().describe("0-based index of the correct option"),
+      explanation: z.string().optional(),
+    }),
+  }),
+  z.object({
+    ...baseExerciseFields,
+    type: z.literal("image-flashcard"),
+    payload: z.object({
+      imagePrompt: z
+        .string()
+        .describe(
+          "Prompt for an image generator — NOT shown to the student. Describe a single concrete subject on a plain white background, no text."
+        ),
+      word: z.string().describe("The word/meaning the image depicts"),
+      options: z
+        .array(z.string())
+        .describe("2-6 answer choices (the matching word/meaning + distractors)"),
+      correctIndex: z.number().int().describe("0-based index of the correct option"),
+    }),
+  }),
 ]);
 
 const homeworkGenerationSchema = z.object({
@@ -93,7 +133,7 @@ Personalize every exercise to the student's profile when context is provided:
 Produce a homework set with:
 - a short, motivating title;
 - a one or two sentence lessonSummary shown on the welcome screen;
-- between 3 and 8 exercises drawn from these types: multiple-choice, fill-blank, word-matching, fill-gaps, word-puzzle.
+- between 3 and 8 exercises drawn from these types: multiple-choice, fill-blank, word-matching, fill-gaps, word-puzzle, listening, image-flashcard.
 
 Payload rules per exercise type (the "payload" object):
 - multiple-choice: { question, options (2-6 strings), correctIndex (0-based), explanation? }
@@ -101,8 +141,12 @@ Payload rules per exercise type (the "payload" object):
 - word-matching: { question?, pairs (3-8 { source, target }) }
 - fill-gaps: { paragraph (gaps written as [gap1], [gap2], ...), gaps ([{ id, answers }]), question?, hint? }
 - word-puzzle: { correctSentence, words (shuffled sentence tokens), distractors?, alternativeAnswers? }
+- listening: { prompt, question, options (2-6 strings), correctIndex (0-based), explanation? } — the student HEARS an audio clip and answers a question about it. The "prompt" is the exact text that will be spoken aloud (in the target language); it is NEVER shown on screen. Use this for pronunciation and listening-comprehension practice (e.g. "Which word did you hear?", "What did the speaker say?"). Keep the spoken "prompt" to a word, phrase, or short sentence.
+- image-flashcard: { imagePrompt, word, options (2-6 strings), correctIndex (0-based) } — the student SEES a generated picture and picks the matching word/meaning. The "imagePrompt" is the description sent to an image generator (NEVER shown); describe a single concrete subject on a plain white background, no text in the image. Use this only for CONCRETE, picturable vocabulary (objects, animals, food, actions) — never for abstract grammar.
 
-Give each exercise a stable id like ex-1, a clear type, a short title, and concise instructions. Vary the exercise types across the set. Return only the structured object.`;
+Give each exercise a stable id like ex-1, a clear type, a short title, and concise instructions. Vary the exercise types across the set — when pedagogically apt, a typical homework should MIX media exercises with the text ones: include about 1 listening exercise (for pronunciation/listening practice) and about 1 image-flashcard (when the lesson involves concrete vocabulary) among the text exercises. Return only the structured object.
+
+${buildPedagogyBlock()}`;
 
 export const homeworkDocumentHandler = createDocumentHandler<"homework">({
   kind: "homework",
@@ -136,8 +180,17 @@ ${studentContext ?? "No specific student context provided — design a solid gen
       });
     }
 
-    const final = await object;
-    return JSON.stringify(final);
+    const final = (await object) as HomeworkContent;
+    // Post-process: synthesize audio/images for media-backed exercises and
+    // attach their URLs, then emit ONE final snapshot with the enriched JSON.
+    const enriched = await enrichHomework(final);
+    const enrichedContent = JSON.stringify(enriched);
+    dataStream.write({
+      type: "data-homeworkDelta",
+      data: enrichedContent,
+      transient: true,
+    });
+    return enrichedContent;
   },
   onUpdateDocument: async ({
     document,
@@ -177,7 +230,14 @@ Return the full updated homework object.`,
       });
     }
 
-    const final = await object;
-    return JSON.stringify(final);
+    const final = (await object) as HomeworkContent;
+    const enriched = await enrichHomework(final);
+    const enrichedContent = JSON.stringify(enriched);
+    dataStream.write({
+      type: "data-homeworkDelta",
+      data: enrichedContent,
+      transient: true,
+    });
+    return enrichedContent;
   },
 });

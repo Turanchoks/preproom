@@ -7,10 +7,26 @@ import "./globals.css";
 import { SessionProvider } from "next-auth/react";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://chat.vercel.ai"),
-  title: "TeachFlow",
+  metadataBase: new URL("https://teachflow.app"),
+  title: {
+    default: "TeachFlow — Your AI teaching studio",
+    template: "%s · TeachFlow",
+  },
   description:
     "TeachFlow — your AI teaching studio. Per-student agent memory, lesson plans, interactive homework, and video lesson analysis.",
+  openGraph: {
+    title: "TeachFlow — Your AI teaching studio",
+    description:
+      "A per-student AI copilot for teachers. Persistent agent chat with long-term memory, lesson plans and interactive homework on a live canvas, video lesson analysis, and one-click share links.",
+    type: "website",
+    siteName: "TeachFlow",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "TeachFlow — Your AI teaching studio",
+    description:
+      "A per-student AI copilot for teachers. Persistent agent chat with long-term memory, interactive homework, and video lesson analysis.",
+  },
 };
 
 export const viewport = {

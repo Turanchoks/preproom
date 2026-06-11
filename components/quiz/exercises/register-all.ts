@@ -17,6 +17,8 @@ import { FillGapsExercise } from "./fill-gaps";
 import { WordMatchingExercise } from "./word-matching";
 import { WordPuzzleExercise } from "./word-puzzle";
 import { SentenceMatchingExercise } from "./sentence-matching";
+import { ListeningExercise } from "./listening";
+import { ImageFlashcardExercise } from "./image-flashcard";
 
 let registered = false;
 
@@ -31,6 +33,8 @@ export function registerAllExercises() {
   registerExercise("word-matching", WordMatchingExercise);
   registerExercise("word-puzzle", WordPuzzleExercise);
   registerExercise("sentence-matching", SentenceMatchingExercise);
+  registerExercise("listening", ListeningExercise);
+  registerExercise("image-flashcard", ImageFlashcardExercise);
 }
 
 /** Stable list of supported types — used by builder UIs and fallback messaging. */
@@ -41,6 +45,8 @@ export const SUPPORTED_EXERCISE_TYPES = [
   "word-matching",
   "word-puzzle",
   "sentence-matching",
+  "listening",
+  "image-flashcard",
 ] as const;
 
 export type SupportedExerciseType = (typeof SUPPORTED_EXERCISE_TYPES)[number];

@@ -2,7 +2,10 @@
  * Seed a demo homework share + a demo lesson-plan share so the public
  * /s/[slug] pages can be exercised end to end.
  *
- * Run with: npx tsx scripts/seed-share-fixture.ts
+ * Run with: npx tsx --require ./scripts/_no-server-only.cjs scripts/seed-share-fixture.ts
+ *
+ * (The require hook neutralizes the `server-only` guard so the media enrichment
+ * pipeline — TTS + image generation — can run outside Next.)
  */
 import { config } from "dotenv";
 import { drizzle } from "drizzle-orm/postgres-js";
@@ -11,6 +14,7 @@ import postgres from "postgres";
 
 import { document, share, user } from "../lib/db/schema";
 import type { HomeworkContent } from "../lib/quiz/homework-schema";
+import { enrichHomework } from "../lib/media/enrich";
 
 config({ path: ".env.local" });
 
@@ -103,6 +107,36 @@ const homework: HomeworkContent = {
         correctIndex: 1,
       },
     },
+    {
+      id: "ex-listen",
+      type: "listening",
+      title: "Listen and choose",
+      instructions: "Play the clip, then pick the word you heard.",
+      payload: {
+        prompt: "manzana",
+        question: "Which word did you hear?",
+        options: ["manzana", "naranja", "plátano", "fresa"],
+        correctIndex: 0,
+        explanation: "'manzana' means apple.",
+        // audioUrl attached by enrichHomework below.
+        audioUrl: "",
+      },
+    },
+    {
+      id: "ex-flash",
+      type: "image-flashcard",
+      title: "Name the picture",
+      instructions: "Look at the picture and pick the matching word.",
+      payload: {
+        imagePrompt:
+          "Simple flat vector-style illustration of a single red apple, centered on a plain white background, bright friendly colors, no text, minimal detail",
+        word: "manzana",
+        options: ["manzana", "perro", "casa", "libro"],
+        correctIndex: 0,
+        // imageUrl attached by enrichHomework below.
+        imageUrl: "",
+      },
+    },
   ],
 };
 
@@ -148,6 +182,10 @@ async function main() {
   }
 
   // 2. Homework document + share slug 'demo-homework'.
+  // Enrich the media-backed exercises (TTS clip + flashcard image) so the
+  // payloads carry real audioUrl / imageUrl before persistence.
+  console.log("Enriching homework media (TTS + image)...");
+  await enrichHomework(homework);
   await seedShare({
     db,
     userId: demoUser.id,

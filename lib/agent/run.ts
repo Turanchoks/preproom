@@ -1,12 +1,14 @@
 import "server-only";
 
 import {
+  type BaseToolset,
   type Event,
   Gemini,
   getFunctionCalls,
   getFunctionResponses,
   InMemorySessionService,
   LlmAgent,
+  MCPToolset,
   Runner,
   StreamingMode,
 } from "@google/adk";
@@ -26,6 +28,33 @@ import { buildAgentTools } from "./tools";
 
 const APP_NAME = "teachflow";
 const MAX_TRANSCRIPT = 30;
+
+/**
+ * Builds the exercise-catalog MCP toolset (stdio child process) when enabled.
+ * Returns null when disabled (MCP_ENABLED=0) or if construction throws — the
+ * in-process get_exercise_catalog FunctionTool fallback then covers the
+ * capability (see lib/agent/tools.ts). Degrades gracefully.
+ */
+function buildMcpToolset(): MCPToolset | null {
+  if (process.env.MCP_ENABLED === "0") {
+    return null;
+  }
+  try {
+    return new MCPToolset({
+      type: "StdioConnectionParams",
+      serverParams: {
+        command: "npx",
+        args: ["tsx", "mcp/exercise-server.ts"],
+        cwd: process.cwd(),
+        env: process.env as Record<string, string>,
+      },
+      timeout: 20_000,
+    });
+  } catch (err) {
+    console.error("buildMcpToolset: failed to construct MCPToolset:", err);
+    return null;
+  }
+}
 
 function textFromParts(parts: ChatMessage["parts"]): string {
   return parts
@@ -160,6 +189,11 @@ export async function runStudioAgent(args: RunStudioAgentArgs): Promise<void> {
     modelId,
   });
 
+  const mcpToolset = buildMcpToolset();
+  const agentTools: (BaseToolset | (typeof tools)[number])[] = mcpToolset
+    ? [...tools, mcpToolset]
+    : tools;
+
   const apiKey =
     process.env.GOOGLE_GENERATIVE_AI_API_KEY ?? process.env.GOOGLE_API_KEY;
 
@@ -173,7 +207,7 @@ export async function runStudioAgent(args: RunStudioAgentArgs): Promise<void> {
     // produce a grounded follow-up answer. The ADK session is fresh per
     // request, so the only "history" it injects is the current turn.
     includeContents: "default",
-    tools,
+    tools: agentTools,
   });
 
   const sessionService = new InMemorySessionService();
@@ -254,6 +288,12 @@ export async function runStudioAgent(args: RunStudioAgentArgs): Promise<void> {
   } finally {
     if (started) {
       writer.write({ type: "text-end", id: blockId });
+    }
+    if (mcpToolset) {
+      // Close the stdio MCP child process; never let cleanup failures surface.
+      await mcpToolset.close().catch((err) => {
+        console.error("runStudioAgent: MCP toolset close failed:", err);
+      });
     }
   }
 

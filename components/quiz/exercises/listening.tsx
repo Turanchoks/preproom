@@ -6,18 +6,23 @@ import type { ExerciseFeedbackPayload, ExerciseResult } from "../core/types";
 import { resolveFeedbackPresentation } from "../lib/feedback-presentation";
 import { cn } from "../lib/cn";
 
-export interface MultipleChoicePayload {
+export interface ListeningPayload {
+  /** Spoken text — never rendered; only the audio is presented. */
+  prompt: string;
   question: string;
   options: string[];
   correctIndex: number;
-  /** Optional explanation surfaced inside the feedback dialog. */
+  /** Public URL of the pre-generated audio clip (attached in post-processing). */
+  audioUrl: string;
   explanation?: string;
 }
 
-function isValid(payload: unknown): payload is MultipleChoicePayload {
+function isValid(payload: unknown): payload is ListeningPayload {
   if (!payload || typeof payload !== "object") return false;
   const p = payload as Record<string, unknown>;
   return (
+    typeof p.audioUrl === "string" &&
+    p.audioUrl.length > 0 &&
     typeof p.question === "string" &&
     Array.isArray(p.options) &&
     p.options.every((o) => typeof o === "string") &&
@@ -25,16 +30,22 @@ function isValid(payload: unknown): payload is MultipleChoicePayload {
   );
 }
 
-export function MultipleChoiceExercise(props: ExerciseComponentProps) {
-  const { exerciseId, payload, interfaceLanguage, onComplete, onStateChange } = props;
+/**
+ * Listening comprehension: the student plays an audio clip, then picks the
+ * correct option. Standard single-attempt multiple-choice flow underneath.
+ */
+export function ListeningExercise(props: ExerciseComponentProps) {
+  const { exerciseId, payload, interfaceLanguage, isMuted, onComplete, onStateChange } =
+    props;
   const ok = isValid(payload);
   const data = ok ? payload : null;
   const [selected, setSelected] = useState<number | null>(null);
   const [committed, setCommitted] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const startedAt = useRef(Date.now());
   const completedRef = useRef(false);
 
-  // Auto-fail invalid payloads so the chain doesn't hang on a busted exercise.
   useEffect(() => {
     if (ok) return;
     onComplete({
@@ -46,7 +57,16 @@ export function MultipleChoiceExercise(props: ExerciseComponentProps) {
     });
   }, [ok, onComplete]);
 
-  // Surface ready-state to the shell so the bottom bar's Check/Next button updates.
+  // Auto-play once on mount (unless muted) so the clip is immediately heard.
+  useEffect(() => {
+    if (!ok || isMuted) return;
+    const el = audioRef.current;
+    if (!el) return;
+    el.play().catch(() => {
+      // Autoplay may be blocked — the student can press play manually.
+    });
+  }, [ok, isMuted]);
+
   useEffect(() => {
     if (!ok) return;
     onStateChange?.({
@@ -76,7 +96,6 @@ export function MultipleChoiceExercise(props: ExerciseComponentProps) {
     };
   }, [committed, selected, data, interfaceLanguage]);
 
-  // Push the feedback payload into the shell, and emit completion exactly once.
   useEffect(() => {
     if (!feedback) return;
     onStateChange?.({
@@ -101,9 +120,47 @@ export function MultipleChoiceExercise(props: ExerciseComponentProps) {
 
   if (!ok || !data) return null;
 
+  const play = () => {
+    const el = audioRef.current;
+    if (!el) return;
+    el.currentTime = 0;
+    el.play().catch(() => {
+      /* ignore */
+    });
+  };
+
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <h2 className="text-2xl font-semibold text-gray-900">{data.question}</h2>
+
+      {/* biome-ignore lint/a11y/useMediaCaption: spoken-word clip, transcript is the answer */}
+      <audio
+        ref={audioRef}
+        src={data.audioUrl}
+        preload="auto"
+        onPlay={() => setPlaying(true)}
+        onEnded={() => setPlaying(false)}
+        onPause={() => setPlaying(false)}
+      />
+      <div className="flex items-center gap-4">
+        <button
+          type="button"
+          onClick={play}
+          className={cn(
+            "flex h-16 w-16 items-center justify-center rounded-full text-white shadow-sm transition",
+            playing ? "bg-blue-700" : "bg-blue-600 hover:bg-blue-700",
+          )}
+          aria-label="Play audio"
+        >
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M8 5v14l11-7z" />
+          </svg>
+        </button>
+        <span className="text-base text-gray-500">
+          {playing ? "Playing…" : "Tap to listen"}
+        </span>
+      </div>
+
       <div className="space-y-3">
         {data.options.map((opt, idx) => {
           const isSelected = selected === idx;
@@ -117,30 +174,15 @@ export function MultipleChoiceExercise(props: ExerciseComponentProps) {
               onClick={() => !committed && setSelected(idx)}
               disabled={committed}
               className={cn(
-                "flex w-full items-center gap-3 rounded-xl border-2 px-4 py-3 text-left text-base transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40",
-                isSelected &&
-                  !committed &&
-                  "border-blue-500 bg-blue-50 ring-2 ring-blue-500/15",
-                !isSelected &&
-                  !committed &&
-                  "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50",
+                "block w-full rounded-xl border-2 px-4 py-3 text-left text-base transition",
+                isSelected && !committed && "border-blue-500 bg-blue-50",
+                !isSelected && !committed && "border-gray-200 bg-white hover:border-gray-300",
                 isCorrect && "border-green-500 bg-green-50",
                 isWrong && "border-red-500 bg-red-50",
                 committed && "cursor-default",
               )}
             >
-              <span
-                className={cn(
-                  "flex size-6 shrink-0 items-center justify-center rounded-full border text-xs font-semibold transition-colors",
-                  isSelected && !committed && "border-blue-500 text-blue-600",
-                  !isSelected && !committed && "border-gray-300 text-gray-400",
-                  isCorrect && "border-green-500 bg-green-500 text-white",
-                  isWrong && "border-red-500 bg-red-500 text-white",
-                )}
-              >
-                {String.fromCharCode(65 + idx)}
-              </span>
-              <span className="flex-1">{opt}</span>
+              {opt}
             </button>
           );
         })}
@@ -149,7 +191,7 @@ export function MultipleChoiceExercise(props: ExerciseComponentProps) {
         <button
           type="button"
           onClick={() => setCommitted(true)}
-          className="rounded-xl bg-blue-600 px-6 py-2.5 font-medium text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 active:translate-y-0"
+          className="rounded-xl bg-blue-600 px-6 py-2 font-medium text-white shadow-sm hover:bg-blue-700"
         >
           Check
         </button>
@@ -158,4 +200,4 @@ export function MultipleChoiceExercise(props: ExerciseComponentProps) {
   );
 }
 
-MultipleChoiceExercise.displayName = "MultipleChoiceExercise";
+ListeningExercise.displayName = "ListeningExercise";

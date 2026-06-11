@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -118,13 +119,18 @@ export default function LandingPage() {
               </Button>
             </div>
 
-            {/* Product screenshot placeholder */}
+            {/* Product screenshot */}
             <div className="mx-auto mt-16 max-w-5xl">
-              <div
-                id="screenshot-slot"
-                className="flex aspect-video w-full items-center justify-center rounded-xl border border-border bg-muted/40 text-muted-foreground text-sm shadow-sm"
-              >
-                Studio preview
+              <div className="overflow-hidden rounded-xl border border-border bg-card shadow-[0_24px_70px_-32px_rgba(0,0,0,0.45)] ring-1 ring-black/5 dark:ring-white/10">
+                <Image
+                  alt="The TeachFlow studio — per-student agent chat alongside a student profile panel."
+                  className="block w-full"
+                  height={1800}
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 1024px"
+                  src="/screenshot-studio.png"
+                  width={2880}
+                />
               </div>
             </div>
           </div>
