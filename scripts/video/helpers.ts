@@ -5,9 +5,9 @@ import { mkdirSync, readdirSync, renameSync, existsSync, rmSync } from "node:fs"
 
 // NOTE: tutorroom-759438277418 was 404 at record time (2026-06-12); the
 // serving, fully TutorRoom-branded host is tutorroom-759438277418.
-export const HOST = "https://tutorroom-759438277418.us-central1.run.app";
-export const CANON = "https://tutorroom-759438277418.us-central1.run.app";
-export const ANNA = "1dfb4c86-06da-4033-b91f-1826589471b0";
+export const HOST = process.env.VIDEO_HOST || "http://localhost:3000";
+export const CANON = HOST;
+export const ANNA = "a0a07811-bf3a-4d0e-9301-9721899d74c0";
 export const EMAIL = "demo@tutorroom.ai";
 export const PASS = "TeachFlow!Demo2026";
 export const VIEW = { width: 1440, height: 810 };
@@ -151,6 +151,10 @@ export async function typeHuman(page: Page, text: string, perChar = 42) {
 // submit leaves a guest session whose cookies don't carry across hosts. So we
 // log in via the auth API directly and inject the session cookie into the
 // browser context for BOTH Cloud Run hostnames.
+// On HTTP (localhost) the cookie is "authjs.session-token"; on HTTPS it's the
+// "__Secure-" prefixed variant.
+const SECURE = HOST.startsWith("https://");
+const COOKIE_NAME = SECURE ? "__Secure-authjs.session-token" : "authjs.session-token";
 let cachedToken: string | null = null;
 async function apiSessionToken(host: string): Promise<string> {
   if (cachedToken) return cachedToken;
@@ -166,7 +170,7 @@ async function apiSessionToken(host: string): Promise<string> {
       body: new URLSearchParams({ email: EMAIL, password: PASS, csrfToken }).toString(),
     });
     const setCookies = res.headers.getSetCookie?.() ?? [];
-    const sess = setCookies.find((c) => c.startsWith("__Secure-authjs.session-token="));
+    const sess = setCookies.find((c) => c.startsWith(`${COOKIE_NAME}=`));
     if (sess) {
       cachedToken = sess.split(";")[0].split("=").slice(1).join("=");
       return cachedToken;
@@ -192,20 +196,16 @@ function readSavedToken(): string | null {
 
 export async function login(page: Page, host = HOST) {
   const token = await apiSessionToken(host);
-  const domains = [
-    "tutorroom-759438277418.us-central1.run.app",
-    "tutorroom-gk7n6cfu6a-uc.a.run.app",
-    "tutorroom-759438277418.us-central1.run.app",
-  ];
-  await page.context().addCookies(domains.map((domain) => ({
-    name: "__Secure-authjs.session-token",
+  const url = new URL(host);
+  await page.context().addCookies([{
+    name: COOKIE_NAME,
     value: token,
-    domain,
+    domain: url.hostname,
     path: "/",
     httpOnly: true,
-    secure: true,
+    secure: SECURE,
     sameSite: "Lax" as const,
-  })));
+  }]);
   await page.goto(`${host}/app`, { waitUntil: "networkidle" });
   await page.waitForTimeout(1500);
 }

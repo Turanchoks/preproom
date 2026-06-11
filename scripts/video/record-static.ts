@@ -79,9 +79,9 @@ async function recordAutonomous(browser: Browser) {
   const aside = page.locator("aside");
   await clickTab(page, "Artifacts");
   await page.waitForTimeout(1700);
-  await moveToLoc(page, aside.getByText("Professional Phrasing Practice", { exact: false }));
+  await moveToLoc(page, aside.getByText("Polite Business Calls", { exact: false }).first());
   await page.waitForTimeout(1600);
-  await moveToLoc(page, aside.getByText("Lesson Plan", { exact: false }).first());
+  await moveToLoc(page, aside.getByText("Business English", { exact: false }).first());
   await page.waitForTimeout(1500);
   await aside.evaluate((el) => el.scrollBy({ top: 180, behavior: "smooth" })).catch(() => {});
   await page.waitForTimeout(1300);
