@@ -56,6 +56,11 @@ function extractChatId(pathname: string): string | null {
   return match ? match[1] : null;
 }
 
+function extractStudentId(pathname: string): string | null {
+  const match = pathname.match(/\/app\/student\/([^/]+)/);
+  return match ? match[1] : null;
+}
+
 export function ActiveChatProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { setDataStream } = useDataStream();
@@ -73,11 +78,18 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
 
   const chatId = chatIdFromUrl ?? newChatIdRef.current;
 
+  const studentIdFromUrl = extractStudentId(pathname);
+  const studentIdRef = useRef<string | null>(studentIdFromUrl);
+
   const [currentModelId, setCurrentModelId] = useState(DEFAULT_CHAT_MODEL);
   const currentModelIdRef = useRef(currentModelId);
   useEffect(() => {
     currentModelIdRef.current = currentModelId;
   }, [currentModelId]);
+
+  useEffect(() => {
+    studentIdRef.current = studentIdFromUrl;
+  }, [studentIdFromUrl]);
 
   const [input, setInput] = useState("");
   const [showCreditCardAlert, setShowCreditCardAlert] = useState(false);
@@ -146,6 +158,9 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
               : { message: lastMessage }),
             selectedChatModel: currentModelIdRef.current,
             selectedVisibilityType: visibility,
+            ...(studentIdRef.current
+              ? { studentId: studentIdRef.current }
+              : {}),
             ...request.body,
           },
         };
@@ -196,6 +211,12 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       }
     }
   }, [chatId, isNewChat, setMessages]);
+
+  useEffect(() => {
+    if (chatData && !isNewChat && !studentIdFromUrl) {
+      studentIdRef.current = chatData.studentId ?? null;
+    }
+  }, [chatData, isNewChat, studentIdFromUrl]);
 
   useEffect(() => {
     if (chatData && !isNewChat) {

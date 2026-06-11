@@ -1,6 +1,10 @@
 import type { NextRequest } from "next/server";
 import { auth } from "@/app/(auth)/auth";
 import { deleteAllChatsByUserId, getChatsByUserId } from "@/lib/db/queries";
+import {
+  getChatsByStudentId,
+  getStudentById,
+} from "@/lib/db/queries-studio";
 import { ChatbotError } from "@/lib/errors";
 
 export async function GET(request: NextRequest) {
@@ -12,6 +16,7 @@ export async function GET(request: NextRequest) {
   );
   const startingAfter = searchParams.get("starting_after");
   const endingBefore = searchParams.get("ending_before");
+  const studentId = searchParams.get("studentId");
 
   if (startingAfter && endingBefore) {
     return new ChatbotError(
@@ -24,6 +29,17 @@ export async function GET(request: NextRequest) {
 
   if (!session?.user) {
     return new ChatbotError("unauthorized:chat").toResponse();
+  }
+
+  if (studentId) {
+    const student = await getStudentById({ id: studentId });
+
+    if (!student || student.userId !== session.user.id) {
+      return Response.json({ chats: [], hasMore: false });
+    }
+
+    const studentChats = await getChatsByStudentId({ studentId, limit });
+    return Response.json({ chats: studentChats, hasMore: false });
   }
 
   const chats = await getChatsByUserId({

@@ -34,6 +34,7 @@ export default function Page() {
     } else if (state.status === "success") {
       setIsSuccessful(true);
       updateSession();
+      router.push("/app");
       router.refresh();
     }
   }, [state.status]);

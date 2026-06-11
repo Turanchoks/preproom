@@ -9,12 +9,16 @@ type UpdateDocumentProps = {
   session: Session;
   dataStream: UIMessageStreamWriter<ChatMessage>;
   modelId: string;
+  studentId?: string | null;
+  studentContext?: string;
 };
 
 export const updateDocument = ({
   session,
   dataStream,
   modelId,
+  studentId,
+  studentContext,
 }: UpdateDocumentProps) =>
   tool({
     description:
@@ -60,6 +64,8 @@ export const updateDocument = ({
         dataStream,
         session,
         modelId,
+        studentId,
+        studentContext,
       });
 
       dataStream.write({ type: "data-finish", data: null, transient: true });

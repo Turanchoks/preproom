@@ -19,6 +19,10 @@ import {
 } from "@/components/chat/sidebar-history";
 import { SidebarUserNav } from "@/components/chat/sidebar-user-nav";
 import {
+  StudentList,
+  useActiveStudentId,
+} from "@/components/studio/student-list";
+import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
@@ -49,10 +53,15 @@ export function AppSidebar({ user }: { user: User | undefined }) {
   const { setOpenMobile, toggleSidebar } = useSidebar();
   const { mutate } = useSWRConfig();
   const [showDeleteAllDialog, setShowDeleteAllDialog] = useState(false);
+  const activeStudentId = useActiveStudentId();
+
+  const newChatHref = activeStudentId
+    ? `/app/student/${activeStudentId}`
+    : "/app";
 
   const handleDeleteAll = () => {
     setShowDeleteAllDialog(false);
-    router.replace("/");
+    router.replace(newChatHref);
     mutate(unstable_serialize(getChatHistoryPaginationKey), [], {
       revalidate: false,
     });
@@ -76,7 +85,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                   className="size-8 !px-0 items-center justify-center group-data-[collapsible=icon]:group-hover/logo:opacity-0"
                   tooltip="Chatbot"
                 >
-                  <Link href="/" onClick={() => setOpenMobile(false)}>
+                  <Link href="/app" onClick={() => setOpenMobile(false)}>
                     <MessageSquareIcon className="size-4 text-sidebar-foreground/50" />
                   </Link>
                 </SidebarMenuButton>
@@ -109,7 +118,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                     className="h-8 rounded-lg border border-sidebar-border text-[13px] text-sidebar-foreground/70 transition-colors duration-150 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                     onClick={() => {
                       setOpenMobile(false);
-                      router.push("/");
+                      router.push(newChatHref);
                     }}
                     tooltip="New Chat"
                   >
@@ -132,7 +141,8 @@ export function AppSidebar({ user }: { user: User | undefined }) {
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
-          <SidebarHistory user={user} />
+          {user && <StudentList />}
+          <SidebarHistory studentId={activeStudentId} user={user} />
         </SidebarContent>
         <SidebarFooter className="border-t border-sidebar-border pt-2 pb-3">
           {user && <SidebarUserNav user={user} />}

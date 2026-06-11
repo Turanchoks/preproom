@@ -12,22 +12,26 @@ type CreateDocumentProps = {
   session: Session;
   dataStream: UIMessageStreamWriter<ChatMessage>;
   modelId: string;
+  studentId?: string | null;
+  studentContext?: string;
 };
 
 export const createDocument = ({
   session,
   dataStream,
   modelId,
+  studentId,
+  studentContext,
 }: CreateDocumentProps) =>
   tool({
     description:
-      "Create an artifact. You MUST specify kind: use 'code' for any programming/algorithm request (creates a script), 'text' for essays/writing (creates a document), 'sheet' for spreadsheets/data.",
+      "Create an artifact. You MUST specify kind: use 'code' for any programming/algorithm request (creates a script), 'text' for essays/writing/lesson plans (creates a document), 'sheet' for spreadsheets/data, 'homework' for an interactive exercise set for a student — use for homework/quiz requests.",
     inputSchema: z.object({
       title: z.string().describe("The title of the artifact"),
       kind: z
         .enum(artifactKinds)
         .describe(
-          "REQUIRED. 'code' for programming/algorithms, 'text' for essays/writing, 'sheet' for spreadsheets"
+          "REQUIRED. 'code' for programming/algorithms, 'text' for essays/writing/lesson plans, 'sheet' for spreadsheets, 'homework' for an interactive exercise set / quiz for a student"
         ),
     }),
     execute: async ({ title, kind }) => {
@@ -72,18 +76,27 @@ export const createDocument = ({
         dataStream,
         session,
         modelId,
+        studentId,
+        studentContext,
       });
 
       dataStream.write({ type: "data-finish", data: null, transient: true });
+
+      let content: string;
+      if (kind === "code") {
+        content = "A script was created and is now visible to the user.";
+      } else if (kind === "homework") {
+        content =
+          "An interactive homework exercise set was created and is now visible to the user.";
+      } else {
+        content = "A document was created and is now visible to the user.";
+      }
 
       return {
         id,
         title,
         kind,
-        content:
-          kind === "code"
-            ? "A script was created and is now visible to the user."
-            : "A document was created and is now visible to the user.",
+        content,
       };
     },
   });

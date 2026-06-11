@@ -1,0 +1,306 @@
+import "server-only";
+
+import {
+  type Event,
+  Gemini,
+  getFunctionCalls,
+  getFunctionResponses,
+  InMemorySessionService,
+  LlmAgent,
+  Runner,
+  StreamingMode,
+} from "@google/adk";
+import type { Content, Part as GenAiPart } from "@google/genai";
+import type { UIMessageStreamWriter } from "ai";
+import type { Session } from "next-auth";
+import {
+  getDocumentsByStudentId,
+  getFactsByStudentId,
+  getVideosByStudentId,
+} from "@/lib/db/queries-studio";
+import type { Student } from "@/lib/db/schema";
+import type { ChatMessage } from "@/lib/types";
+import { generateUUID } from "@/lib/utils";
+import { buildSystemPrompt, type TranscriptMessage } from "./prompts";
+import { buildAgentTools } from "./tools";
+
+const APP_NAME = "teachflow";
+const MAX_TRANSCRIPT = 30;
+
+function textFromParts(parts: ChatMessage["parts"]): string {
+  return parts
+    .filter((p): p is { type: "text"; text: string } => p.type === "text")
+    .map((p) => p.text)
+    .join("\n")
+    .trim();
+}
+
+function fileUrlsFromParts(parts: ChatMessage["parts"]): {
+  url: string;
+  mediaType: string;
+}[] {
+  const files: { url: string; mediaType: string }[] = [];
+  for (const p of parts) {
+    if (
+      p.type === "file" &&
+      typeof (p as { url?: unknown }).url === "string"
+    ) {
+      files.push({
+        url: (p as { url: string }).url,
+        mediaType:
+          (p as { mediaType?: string }).mediaType ?? "application/octet-stream",
+      });
+    }
+  }
+  return files;
+}
+
+/**
+ * Builds the genai Content for the latest user message. Attaches image
+ * attachments as inlineData when reachable, otherwise appends their URLs to
+ * the text so the model is at least aware of them.
+ */
+async function buildNewMessage(
+  latest: ChatMessage
+): Promise<Content> {
+  const text = textFromParts(latest.parts);
+  const files = fileUrlsFromParts(latest.parts);
+  const parts: GenAiPart[] = [];
+
+  for (const file of files) {
+    try {
+      const res = await fetch(file.url);
+      if (res.ok) {
+        const buf = Buffer.from(await res.arrayBuffer());
+        parts.push({
+          inlineData: {
+            mimeType: file.mediaType,
+            data: buf.toString("base64"),
+          },
+        });
+        continue;
+      }
+    } catch {
+      /* fall through to URL text */
+    }
+    parts.push({ text: `[attachment: ${file.url}]` });
+  }
+
+  parts.push({ text: text || "(no text)" });
+  return { role: "user", parts };
+}
+
+function buildTranscript(uiMessages: ChatMessage[]): TranscriptMessage[] {
+  // Drop the latest message (sent as newMessage), text parts only, cap.
+  const prior = uiMessages.slice(0, -1);
+  const transcript: TranscriptMessage[] = [];
+  for (const m of prior) {
+    if (m.role !== "user" && m.role !== "assistant") {
+      continue;
+    }
+    const text = textFromParts(m.parts);
+    if (!text) {
+      continue;
+    }
+    transcript.push({ role: m.role, text });
+  }
+  return transcript.slice(-MAX_TRANSCRIPT);
+}
+
+export type RunStudioAgentArgs = {
+  writer: UIMessageStreamWriter<ChatMessage>;
+  session: Session;
+  student: Student;
+  userId: string;
+  uiMessages: ChatMessage[];
+  modelId: string;
+};
+
+/**
+ * Bridges the ADK agent into the AI SDK UI message stream. Builds a fresh
+ * agent + in-memory session per request, embeds prior conversation as a
+ * transcript block in the instruction, and streams events to the writer.
+ */
+export async function runStudioAgent(args: RunStudioAgentArgs): Promise<void> {
+  const { writer, session, student, userId, uiMessages, modelId } = args;
+  const studentId = student.id;
+
+  const latest = uiMessages.at(-1);
+  if (!latest) {
+    return;
+  }
+  const latestText = textFromParts(latest.parts);
+
+  // Load context for the instruction. searchStudentFacts is keyword-based;
+  // we combine the most recent facts with a search on the user message.
+  const [facts, documents, videos] = await Promise.all([
+    getFactsByStudentId({ studentId, limit: 20 }),
+    getDocumentsByStudentId({ studentId }),
+    getVideosByStudentId({ studentId }),
+  ]);
+
+  const instruction = buildSystemPrompt({
+    student,
+    facts,
+    documents: documents.map((d) => ({
+      id: d.id,
+      kind: d.kind,
+      title: d.title,
+      createdAt: d.createdAt,
+    })),
+    videos,
+    recentTranscript: buildTranscript(uiMessages),
+  });
+
+  const tools = buildAgentTools({
+    session,
+    dataStream: writer,
+    studentId,
+    userId,
+    modelId,
+  });
+
+  const apiKey =
+    process.env.GOOGLE_GENERATIVE_AI_API_KEY ?? process.env.GOOGLE_API_KEY;
+
+  const agent = new LlmAgent({
+    name: "teachflow_copilot",
+    model: new Gemini({ model: modelId, apiKey }),
+    instruction,
+    // Prior turns are supplied via the transcript block in the instruction.
+    // We keep `includeContents: "default"` (not "none") so that WITHIN this
+    // request the model sees its own tool calls + tool responses and can
+    // produce a grounded follow-up answer. The ADK session is fresh per
+    // request, so the only "history" it injects is the current turn.
+    includeContents: "default",
+    tools,
+  });
+
+  const sessionService = new InMemorySessionService();
+  const adkSession = await sessionService.createSession({
+    appName: APP_NAME,
+    userId,
+  });
+
+  const runner = new Runner({
+    appName: APP_NAME,
+    agent,
+    sessionService,
+  });
+
+  const newMessage = await buildNewMessage(latest);
+
+  let streamedAny = false;
+  let toolActivitySeen = false;
+  const blockId = generateUUID();
+  let started = false;
+  let aggregated = "";
+
+  const ensureStart = () => {
+    if (!started) {
+      writer.write({ type: "text-start", id: blockId });
+      started = true;
+    }
+  };
+
+  try {
+    for await (const event of runner.runAsync({
+      userId,
+      sessionId: adkSession.id,
+      newMessage,
+      runConfig: { streamingMode: StreamingMode.SSE },
+    })) {
+      if (handleToolActivity(writer, event)) {
+        toolActivitySeen = true;
+      }
+
+      const parts = event.content?.parts ?? [];
+      const eventText = textFromEventParts(parts);
+
+      if (eventText) {
+        if (event.partial) {
+          ensureStart();
+          writer.write({
+            type: "text-delta",
+            id: blockId,
+            delta: eventText,
+          });
+          aggregated += eventText;
+          streamedAny = true;
+        } else if (streamedAny) {
+          // Final aggregated text after we already streamed deltas — dedupe:
+          // only emit the remainder if the final text extends what we streamed.
+          if (eventText.length > aggregated.length && started) {
+            writer.write({
+              type: "text-delta",
+              id: blockId,
+              delta: eventText.slice(aggregated.length),
+            });
+            aggregated = eventText;
+          }
+        } else {
+          // Non-partial final text without prior deltas (SSE unsupported):
+          // emit as one complete text block.
+          const id = generateUUID();
+          writer.write({ type: "text-start", id });
+          writer.write({ type: "text-delta", id, delta: eventText });
+          writer.write({ type: "text-end", id });
+        }
+      }
+    }
+  } catch (err) {
+    console.error("runStudioAgent: error during agent run:", err);
+    throw err;
+  } finally {
+    if (started) {
+      writer.write({ type: "text-end", id: blockId });
+    }
+  }
+
+  // The agent produced no text and ran no tools — usually a model/quota error
+  // swallowed by the runtime. Surface a visible note instead of a blank turn.
+  if (!(streamedAny || toolActivitySeen)) {
+    const id = generateUUID();
+    writer.write({ type: "text-start", id });
+    writer.write({
+      type: "text-delta",
+      id,
+      delta:
+        "I couldn't generate a response just now (the model may be rate-limited). Please try again in a moment.",
+    });
+    writer.write({ type: "text-end", id });
+  }
+}
+
+function textFromEventParts(parts: GenAiPart[]): string {
+  return parts
+    .filter((p) => typeof p.text === "string" && !p.thought)
+    .map((p) => p.text as string)
+    .join("");
+}
+
+function handleToolActivity(
+  writer: UIMessageStreamWriter<ChatMessage>,
+  event: Event
+): boolean {
+  let saw = false;
+  const calls = getFunctionCalls(event);
+  for (const call of calls) {
+    saw = true;
+    writer.write({
+      type: "data-toolActivity",
+      data: { name: call.name ?? "tool", status: "running" },
+      transient: true,
+    });
+  }
+  const responses = getFunctionResponses(event);
+  for (const resp of responses) {
+    saw = true;
+    writer.write({
+      type: "data-toolActivity",
+      data: { name: resp.name ?? "tool", status: "done" },
+      transient: true,
+    });
+  }
+  return saw;
+}

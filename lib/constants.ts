@@ -13,8 +13,8 @@ export const guestRegex = /^guest-\d+$/;
 export const DUMMY_PASSWORD = generateDummyPassword();
 
 export const suggestions = [
-  "What are the advantages of using Next.js?",
-  "Write code to demonstrate Dijkstra's algorithm",
-  "Help me write an essay about Silicon Valley",
-  "What is the weather in San Francisco?",
+  "Plan a 60-min B1 lesson on past simple",
+  "Create interactive homework on greetings",
+  "Summarize what we know about this student",
+  "Suggest a warm-up activity for an A2 learner",
 ];

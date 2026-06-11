@@ -1,5 +1,6 @@
 import type { Geo } from "@vercel/functions";
 import type { ArtifactKind } from "@/components/chat/artifact";
+import type { Student, StudentFact } from "@/lib/db/schema";
 
 export const artifactsPrompt = `
 Artifacts is a side panel that displays content alongside the conversation. It supports scripts (code), documents (text), and spreadsheets. Changes appear in real-time.
@@ -62,6 +63,47 @@ About the origin of user's request:
 - city: ${requestHints.city}
 - country: ${requestHints.country}
 `;
+
+/**
+ * Builds a teacher-copilot student-context block appended to the fallback
+ * (AI SDK streamText) system prompt when a studentId is present.
+ */
+export const buildStudentContext = ({
+  student,
+  facts,
+}: {
+  student: Student;
+  facts: StudentFact[];
+}): string => {
+  const lines: string[] = [
+    `You are assisting a language TEACHER preparing materials for their student "${student.name}". You are talking to the teacher, not the student.`,
+  ];
+  if (student.level) {
+    lines.push(`Student CEFR level: ${student.level}`);
+  }
+  if (student.targetLanguage) {
+    lines.push(`Learning language: ${student.targetLanguage}`);
+  }
+  if (student.nativeLanguage) {
+    lines.push(`Native language: ${student.nativeLanguage}`);
+  }
+  if (student.goals) {
+    lines.push(`Goals: ${student.goals}`);
+  }
+
+  if (facts.length > 0) {
+    const facted = facts
+      .map((f) => `- [${f.category}] ${f.fact}`)
+      .join("\n");
+    lines.push(`What you know about ${student.name}:\n${facted}`);
+  }
+
+  lines.push(
+    "Create lesson plans (kind 'text') and homework (kind 'homework') as artifacts personalized to this student; never paste their content into chat."
+  );
+
+  return lines.join("\n");
+};
 
 export const systemPrompt = ({
   requestHints,

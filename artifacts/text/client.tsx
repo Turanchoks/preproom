@@ -8,6 +8,7 @@ import {
   MessageIcon,
   PenIcon,
   RedoIcon,
+  ShareIcon,
   UndoIcon,
 } from "@/components/chat/icons";
 import { Editor } from "@/components/chat/text-editor";
@@ -148,6 +149,28 @@ export const textArtifact = new Artifact<"text", TextArtifactMetadata>({
       onClick: ({ content }) => {
         navigator.clipboard.writeText(content);
         toast.success("Copied to clipboard!");
+      },
+    },
+    {
+      icon: <ShareIcon size={18} />,
+      description: "Share",
+      onClick: async ({ documentId }) => {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/share`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ documentId }),
+          }
+        );
+
+        if (!res.ok) {
+          throw new Error("Failed to create share link");
+        }
+
+        const { url } = (await res.json()) as { slug: string; url: string };
+        await navigator.clipboard.writeText(`${window.location.origin}${url}`);
+        toast.success("Share link copied");
       },
     },
   ],

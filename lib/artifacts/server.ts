@@ -1,10 +1,12 @@
 import type { UIMessageStreamWriter } from "ai";
 import type { Session } from "next-auth";
 import { codeDocumentHandler } from "@/artifacts/code/server";
+import { homeworkDocumentHandler } from "@/artifacts/homework/server";
 import { sheetDocumentHandler } from "@/artifacts/sheet/server";
 import { textDocumentHandler } from "@/artifacts/text/server";
 import type { ArtifactKind } from "@/components/chat/artifact";
 import { saveDocument } from "../db/queries";
+import { saveStudentDocument } from "../db/queries-studio";
 import type { Document } from "../db/schema";
 import type { ChatMessage } from "../types";
 
@@ -22,6 +24,8 @@ export type CreateDocumentCallbackProps = {
   dataStream: UIMessageStreamWriter<ChatMessage>;
   session: Session;
   modelId: string;
+  studentId?: string | null;
+  studentContext?: string;
 };
 
 export type UpdateDocumentCallbackProps = {
@@ -30,6 +34,8 @@ export type UpdateDocumentCallbackProps = {
   dataStream: UIMessageStreamWriter<ChatMessage>;
   session: Session;
   modelId: string;
+  studentId?: string | null;
+  studentContext?: string;
 };
 
 export type DocumentHandler<T = ArtifactKind> = {
@@ -52,16 +58,29 @@ export function createDocumentHandler<T extends ArtifactKind>(config: {
         dataStream: args.dataStream,
         session: args.session,
         modelId: args.modelId,
+        studentId: args.studentId,
+        studentContext: args.studentContext,
       });
 
       if (args.session?.user?.id) {
-        await saveDocument({
-          id: args.id,
-          title: args.title,
-          content: draftContent,
-          kind: config.kind,
-          userId: args.session.user.id,
-        });
+        if (args.studentId) {
+          await saveStudentDocument({
+            id: args.id,
+            title: args.title,
+            content: draftContent,
+            kind: config.kind,
+            userId: args.session.user.id,
+            studentId: args.studentId,
+          });
+        } else {
+          await saveDocument({
+            id: args.id,
+            title: args.title,
+            content: draftContent,
+            kind: config.kind,
+            userId: args.session.user.id,
+          });
+        }
       }
 
       return;
@@ -73,16 +92,29 @@ export function createDocumentHandler<T extends ArtifactKind>(config: {
         dataStream: args.dataStream,
         session: args.session,
         modelId: args.modelId,
+        studentId: args.studentId,
+        studentContext: args.studentContext,
       });
 
       if (args.session?.user?.id) {
-        await saveDocument({
-          id: args.document.id,
-          title: args.document.title,
-          content: draftContent,
-          kind: config.kind,
-          userId: args.session.user.id,
-        });
+        if (args.studentId ?? args.document.studentId) {
+          await saveStudentDocument({
+            id: args.document.id,
+            title: args.document.title,
+            content: draftContent,
+            kind: config.kind,
+            userId: args.session.user.id,
+            studentId: args.studentId ?? args.document.studentId,
+          });
+        } else {
+          await saveDocument({
+            id: args.document.id,
+            title: args.document.title,
+            content: draftContent,
+            kind: config.kind,
+            userId: args.session.user.id,
+          });
+        }
       }
 
       return;
@@ -94,6 +126,7 @@ export const documentHandlersByArtifactKind: DocumentHandler[] = [
   textDocumentHandler,
   codeDocumentHandler,
   sheetDocumentHandler,
+  homeworkDocumentHandler,
 ];
 
-export const artifactKinds = ["text", "code", "sheet"] as const;
+export const artifactKinds = ["text", "code", "sheet", "homework"] as const;

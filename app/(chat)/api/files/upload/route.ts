@@ -1,8 +1,8 @@
-import { put } from "@vercel/blob";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { auth } from "@/app/(auth)/auth";
+import { saveUpload } from "@/lib/gcs";
 
 const FileSchema = z.object({
   file: z
@@ -46,14 +46,21 @@ export async function POST(request: Request) {
 
     const filename = (formData.get("file") as File).name;
     const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, "_");
-    const fileBuffer = await file.arrayBuffer();
+    const contentType = file.type || "application/octet-stream";
+    const fileBuffer = Buffer.from(await file.arrayBuffer());
 
     try {
-      const data = await put(`${safeName}`, fileBuffer, {
-        access: "public",
-      });
+      const { publicUrl } = await saveUpload(
+        fileBuffer,
+        `attachments/${Date.now()}-${safeName}`,
+        contentType
+      );
 
-      return NextResponse.json(data);
+      return NextResponse.json({
+        url: publicUrl,
+        pathname: safeName,
+        contentType,
+      });
     } catch (_error) {
       return NextResponse.json({ error: "Upload failed" }, { status: 500 });
     }

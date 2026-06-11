@@ -52,6 +52,7 @@ import {
   PromptInputTools,
 } from "../ai-elements/prompt-input";
 import { Button } from "../ui/button";
+import { useActiveStudentId } from "@/components/studio/student-list";
 import { PaperclipIcon, StopIcon } from "./icons";
 import { PreviewAttachment } from "./preview-attachment";
 import {
@@ -108,6 +109,10 @@ function PureMultimodalInput({
   isLoading?: boolean;
 }) {
   const router = useRouter();
+  const activeStudentId = useActiveStudentId();
+  const newChatHref = activeStudentId
+    ? `/app/student/${activeStudentId}`
+    : "/app";
   const { setTheme, resolvedTheme } = useTheme();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();
@@ -157,7 +162,7 @@ function PureMultimodalInput({
     setInput("");
     switch (cmd.action) {
       case "new":
-        router.push("/");
+        router.push(newChatHref);
         break;
       case "clear":
         setMessages(() => []);
@@ -184,7 +189,7 @@ function PureMultimodalInput({
                 `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/chat?id=${chatId}`,
                 { method: "DELETE" }
               );
-              router.push("/");
+              router.push(newChatHref);
               toast.success("Chat deleted");
             },
           },
@@ -198,7 +203,7 @@ function PureMultimodalInput({
               fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/history`, {
                 method: "DELETE",
               });
-              router.push("/");
+              router.push(newChatHref);
               toast.success("All chats deleted");
             },
           },

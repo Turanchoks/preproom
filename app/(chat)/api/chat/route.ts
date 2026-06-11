@@ -18,12 +18,18 @@ import {
   DEFAULT_CHAT_MODEL,
   getCapabilities,
 } from "@/lib/ai/models";
-import { type RequestHints, systemPrompt } from "@/lib/ai/prompts";
+import { runStudioAgent } from "@/lib/agent/run";
+import {
+  buildStudentContext,
+  type RequestHints,
+  systemPrompt,
+} from "@/lib/ai/prompts";
 import { getLanguageModel } from "@/lib/ai/providers";
 import { createDocument } from "@/lib/ai/tools/create-document";
 import { editDocument } from "@/lib/ai/tools/edit-document";
 import { getWeather } from "@/lib/ai/tools/get-weather";
 import { requestSuggestions } from "@/lib/ai/tools/request-suggestions";
+import { saveFactTool } from "@/lib/ai/tools/save-fact";
 import { updateDocument } from "@/lib/ai/tools/update-document";
 import { isProductionEnvironment } from "@/lib/constants";
 import {
@@ -37,7 +43,13 @@ import {
   updateChatTitleById,
   updateMessage,
 } from "@/lib/db/queries";
-import type { DBMessage } from "@/lib/db/schema";
+import {
+  getFactsByStudentId,
+  getStudentById,
+  searchStudentFacts,
+  setChatStudent,
+} from "@/lib/db/queries-studio";
+import type { DBMessage, Student, StudentFact } from "@/lib/db/schema";
 import { ChatbotError } from "@/lib/errors";
 import { checkIpRateLimit } from "@/lib/ratelimit";
 import type { ChatMessage } from "@/lib/types";
@@ -68,8 +80,14 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { id, message, messages, selectedChatModel, selectedVisibilityType } =
-      requestBody;
+    const {
+      id,
+      message,
+      messages,
+      selectedChatModel,
+      selectedVisibilityType,
+      studentId,
+    } = requestBody;
 
     const [, session] = await Promise.all([
       checkBotId().catch(() => null),
@@ -99,6 +117,36 @@ export async function POST(request: Request) {
 
     const isToolApprovalFlow = Boolean(messages);
 
+    // Load student context (ownership-checked) when a studentId is present.
+    let student: Student | null = null;
+    let studentFacts: StudentFact[] = [];
+    if (studentId) {
+      const loaded = await getStudentById({ id: studentId });
+      if (!loaded || loaded.userId !== session.user.id) {
+        return new ChatbotError("forbidden:chat").toResponse();
+      }
+      student = loaded;
+      const userText =
+        message?.parts
+          ?.filter((p): p is { type: "text"; text: string } => p.type === "text")
+          .map((p) => p.text)
+          .join(" ") ?? "";
+      const [recentFacts, matchedFacts] = await Promise.all([
+        getFactsByStudentId({ studentId, limit: 20 }),
+        userText
+          ? searchStudentFacts({ studentId, query: userText, limit: 10 })
+          : Promise.resolve<StudentFact[]>([]),
+      ]);
+      const seen = new Set<string>();
+      studentFacts = [...recentFacts, ...matchedFacts].filter((f) => {
+        if (seen.has(f.id)) {
+          return false;
+        }
+        seen.add(f.id);
+        return true;
+      });
+    }
+
     const chat = await getChatById({ id });
     let messagesFromDb: DBMessage[] = [];
     let titlePromise: Promise<string> | null = null;
@@ -115,6 +163,9 @@ export async function POST(request: Request) {
         title: "New chat",
         visibility: selectedVisibilityType,
       });
+      if (studentId) {
+        await setChatStudent({ chatId: id, studentId });
+      }
       titlePromise = generateTitleFromUserMessage({ message });
     }
 
@@ -191,57 +242,94 @@ export async function POST(request: Request) {
     const stream = createUIMessageStream({
       originalMessages: isToolApprovalFlow ? uiMessages : undefined,
       execute: async ({ writer: dataStream }) => {
-        const result = streamText({
-          model: getLanguageModel(chatModel),
-          system: systemPrompt({ requestHints, supportsTools }),
-          messages: modelMessages,
-          stopWhen: stepCountIs(5),
-          experimental_activeTools:
-            isReasoningModel && !supportsTools
-              ? []
-              : [
-                  "getWeather",
-                  "createDocument",
-                  "editDocument",
-                  "updateDocument",
-                  "requestSuggestions",
-                ],
-          providerOptions: {
-            ...(modelConfig?.gatewayOrder && {
-              gateway: { order: modelConfig.gatewayOrder },
-            }),
-            ...(modelConfig?.reasoningEffort && {
-              openai: { reasoningEffort: modelConfig.reasoningEffort },
-            }),
-          },
-          tools: {
-            getWeather,
-            createDocument: createDocument({
-              session,
-              dataStream,
-              modelId: chatModel,
-            }),
-            editDocument: editDocument({ dataStream, session }),
-            updateDocument: updateDocument({
-              session,
-              dataStream,
-              modelId: chatModel,
-            }),
-            requestSuggestions: requestSuggestions({
-              session,
-              dataStream,
-              modelId: chatModel,
-            }),
-          },
-          experimental_telemetry: {
-            isEnabled: isProductionEnvironment,
-            functionId: "stream-text",
-          },
-        });
+        const useAdk = process.env.USE_ADK !== "0" && Boolean(student);
 
-        dataStream.merge(
-          result.toUIMessageStream({ sendReasoning: isReasoningModel })
-        );
+        if (useAdk && student) {
+          try {
+            await runStudioAgent({
+              writer: dataStream,
+              session,
+              student,
+              userId: session.user.id,
+              uiMessages,
+              modelId: chatModel,
+            });
+          } catch (agentError) {
+            console.error("ADK agent run failed:", agentError);
+            throw agentError;
+          }
+        } else {
+          const studentContext = student
+            ? buildStudentContext({ student, facts: studentFacts })
+            : null;
+
+          const result = streamText({
+            model: getLanguageModel(chatModel),
+            system: studentContext
+              ? `${systemPrompt({ requestHints, supportsTools })}\n\n${studentContext}`
+              : systemPrompt({ requestHints, supportsTools }),
+            messages: modelMessages,
+            stopWhen: stepCountIs(5),
+            experimental_activeTools:
+              isReasoningModel && !supportsTools
+                ? []
+                : student
+                  ? [
+                      "createDocument",
+                      "editDocument",
+                      "updateDocument",
+                      "requestSuggestions",
+                      "saveFact",
+                    ]
+                  : [
+                      "getWeather",
+                      "createDocument",
+                      "editDocument",
+                      "updateDocument",
+                      "requestSuggestions",
+                    ],
+            providerOptions: {
+              ...(modelConfig?.gatewayOrder && {
+                gateway: { order: modelConfig.gatewayOrder },
+              }),
+              ...(modelConfig?.reasoningEffort && {
+                openai: { reasoningEffort: modelConfig.reasoningEffort },
+              }),
+            },
+            tools: {
+              getWeather,
+              createDocument: createDocument({
+                session,
+                dataStream,
+                modelId: chatModel,
+                studentId: student?.id ?? null,
+                studentContext: studentContext ?? undefined,
+              }),
+              editDocument: editDocument({ dataStream, session }),
+              updateDocument: updateDocument({
+                session,
+                dataStream,
+                modelId: chatModel,
+                studentId: student?.id ?? null,
+                studentContext: studentContext ?? undefined,
+              }),
+              requestSuggestions: requestSuggestions({
+                session,
+                dataStream,
+                modelId: chatModel,
+              }),
+              saveFact: saveFactTool({ studentId: student?.id ?? "" }),
+            },
+            experimental_telemetry: {
+              isEnabled: isProductionEnvironment,
+              functionId: "stream-text",
+            },
+          });
+
+          dataStream.merge(
+            result.toUIMessageStream({ sendReasoning: isReasoningModel })
+          );
+        }
 
         if (titlePromise) {
           try {

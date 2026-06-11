@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
   AlertDialog,
@@ -55,6 +56,12 @@ export function ChatShell() {
   const isArtifactVisible = useArtifactSelector((state) => state.isVisible);
   const { setArtifact } = useArtifact();
 
+  const pathname = usePathname();
+  // The StudentPanel renders as a fixed 360px right column on student pages
+  // when no artifact canvas is open — reserve space so chat isn't covered.
+  const isStudentRoute = Boolean(pathname?.startsWith("/app/student/"));
+  const showStudentPanel = isStudentRoute && !isArtifactVisible;
+
   const stopRef = useRef(stop);
   stopRef.current = stop;
 
@@ -71,7 +78,12 @@ export function ChatShell() {
 
   return (
     <>
-      <div className="flex h-dvh w-full flex-row overflow-hidden">
+      <div
+        className={cn(
+          "flex h-dvh w-full flex-row overflow-hidden",
+          showStudentPanel && "lg:pr-[360px]"
+        )}
+      >
         <div
           className={cn(
             "flex min-w-0 flex-col bg-sidebar transition-[width] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
@@ -192,7 +204,7 @@ export function ChatShell() {
                   "https://vercel.com/d?to=%2F%5Bteam%5D%2F%7E%2Fai%3Fmodal%3Dadd-credit-card",
                   "_blank"
                 );
-                window.location.href = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/`;
+                window.location.href = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/app`;
               }}
             >
               Activate

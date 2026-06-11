@@ -98,10 +98,34 @@ export function getChatHistoryPaginationKey(
   return `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/history?ending_before=${firstChatFromPage.id}&limit=${PAGE_SIZE}`;
 }
 
-export function SidebarHistory({ user }: { user: User | undefined }) {
+// When scoped to a student, history is a single (un-paginated) page filtered
+// server-side by studentId.
+function makeStudentHistoryKey(studentId: string) {
+  return (pageIndex: number, previousPageData: ChatHistory) => {
+    if (pageIndex > 0) {
+      return null;
+    }
+    if (previousPageData && previousPageData.hasMore === false && pageIndex) {
+      return null;
+    }
+    return `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/history?limit=${PAGE_SIZE}&studentId=${studentId}`;
+  };
+}
+
+export function SidebarHistory({
+  user,
+  studentId,
+}: {
+  user: User | undefined;
+  studentId?: string | null;
+}) {
   const { setOpenMobile } = useSidebar();
   const pathname = usePathname();
   const id = pathname?.startsWith("/chat/") ? pathname.split("/")[2] : null;
+
+  const keyFactory = studentId
+    ? makeStudentHistoryKey(studentId)
+    : getChatHistoryPaginationKey;
 
   const {
     data: paginatedChatHistories,
@@ -110,7 +134,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
     isLoading,
     mutate,
   } = useSWRInfinite<ChatHistory>(
-    user ? getChatHistoryPaginationKey : () => null,
+    user ? keyFactory : () => null,
     fetcher,
     { fallbackData: [], revalidateOnFocus: false }
   );
@@ -134,7 +158,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
     setShowDeleteDialog(false);
 
     if (isCurrentChat) {
-      router.replace("/");
+      router.replace("/app");
     }
 
     mutate((chatHistories) => {
