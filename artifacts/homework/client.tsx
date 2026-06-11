@@ -155,7 +155,12 @@ export const homeworkArtifact = new Artifact<"homework", HomeworkArtifactMetadat
             <CheckCircle2Icon className="size-3.5" />
             <span className="font-medium">Validated · Pedagogy-reviewed</span>
           </div>
-          <QuizPlayer homework={homework} mode="preview" />
+          {/* The ported quiz player is designed for a light surface. Force a
+              light-scoped container so it stays readable on the dark canvas,
+              matching the public share page treatment. */}
+          <div className="light rounded-xl bg-white p-4 text-gray-900">
+            <QuizPlayer homework={homework} mode="preview" />
+          </div>
         </div>
       );
     },

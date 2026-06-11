@@ -348,7 +348,7 @@ function PureArtifact({
         </div>
       )}
       <div
-        className="relative flex-1 overflow-y-auto bg-background"
+        className="relative flex-1 overflow-y-auto overflow-x-hidden bg-background"
         data-slot="artifact-content"
         onScroll={() => {
           const el = artifactContentRef.current;

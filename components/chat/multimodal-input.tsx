@@ -10,7 +10,7 @@ import {
   LockIcon,
   WrenchIcon,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
   type ChangeEvent,
@@ -109,6 +109,12 @@ function PureMultimodalInput({
   isLoading?: boolean;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
+  // Suggested actions belong only to a fresh, empty chat (no /chat/[id] yet).
+  // On a resumed chat the message list can be momentarily empty while history
+  // loads, so gating on messages.length alone leaks the chips over the
+  // transcript — also require that the URL isn't an existing chat.
+  const isExistingChatRoute = /\/chat\/[^/]+/.test(pathname ?? "");
   const activeStudentId = useActiveStudentId();
   const newChatHref = activeStudentId
     ? `/app/student/${activeStudentId}`
@@ -393,6 +399,7 @@ function PureMultimodalInput({
 
       {!editingMessage &&
         !isLoading &&
+        !isExistingChatRoute &&
         messages.length === 0 &&
         attachments.length === 0 &&
         uploadQueue.length === 0 && (

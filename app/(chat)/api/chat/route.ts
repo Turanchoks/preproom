@@ -117,11 +117,20 @@ export async function POST(request: Request) {
 
     const isToolApprovalFlow = Boolean(messages);
 
+    // Resolve the chat row up-front so we can fall back to its persisted
+    // studentId when the client request omits it (e.g. a resumed /chat/[id]
+    // where the client-side studentId fallback hasn't populated yet).
+    const chat = await getChatById({ id });
+    if (chat && chat.userId !== session.user.id) {
+      return new ChatbotError("forbidden:chat").toResponse();
+    }
+    const effectiveStudentId = studentId ?? chat?.studentId ?? null;
+
     // Load student context (ownership-checked) when a studentId is present.
     let student: Student | null = null;
     let studentFacts: StudentFact[] = [];
-    if (studentId) {
-      const loaded = await getStudentById({ id: studentId });
+    if (effectiveStudentId) {
+      const loaded = await getStudentById({ id: effectiveStudentId });
       if (!loaded || loaded.userId !== session.user.id) {
         return new ChatbotError("forbidden:chat").toResponse();
       }
@@ -132,9 +141,13 @@ export async function POST(request: Request) {
           .map((p) => p.text)
           .join(" ") ?? "";
       const [recentFacts, matchedFacts] = await Promise.all([
-        getFactsByStudentId({ studentId, limit: 20 }),
+        getFactsByStudentId({ studentId: effectiveStudentId, limit: 20 }),
         userText
-          ? searchStudentFacts({ studentId, query: userText, limit: 10 })
+          ? searchStudentFacts({
+              studentId: effectiveStudentId,
+              query: userText,
+              limit: 10,
+            })
           : Promise.resolve<StudentFact[]>([]),
       ]);
       const seen = new Set<string>();
@@ -147,14 +160,10 @@ export async function POST(request: Request) {
       });
     }
 
-    const chat = await getChatById({ id });
     let messagesFromDb: DBMessage[] = [];
     let titlePromise: Promise<string> | null = null;
 
     if (chat) {
-      if (chat.userId !== session.user.id) {
-        return new ChatbotError("forbidden:chat").toResponse();
-      }
       messagesFromDb = await getMessagesByChatId({ id });
     } else if (message?.role === "user") {
       await saveChat({
@@ -163,8 +172,8 @@ export async function POST(request: Request) {
         title: "New chat",
         visibility: selectedVisibilityType,
       });
-      if (studentId) {
-        await setChatStudent({ chatId: id, studentId });
+      if (effectiveStudentId) {
+        await setChatStudent({ chatId: id, studentId: effectiveStudentId });
       }
       titlePromise = generateTitleFromUserMessage({ message });
     }

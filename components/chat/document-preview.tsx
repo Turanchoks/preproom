@@ -26,6 +26,45 @@ import {
 import { ImageEditor } from "./image-editor";
 import { SpreadsheetEditor } from "./sheet-editor";
 import { Editor } from "./text-editor";
+import { parseHomework } from "@/lib/quiz/homework-schema";
+
+const HOMEWORK_TYPE_LABELS: Record<string, string> = {
+  "multiple-choice": "multiple choice",
+  "fill-blank": "fill the blank",
+  "word-matching": "word matching",
+  "fill-gaps": "fill the gaps",
+  "word-puzzle": "word puzzle",
+};
+
+function HomeworkPreviewSummary({ document }: { document: Document }) {
+  const homework = parseHomework(document.content ?? "");
+  const exercises = homework?.exercises ?? [];
+  const typeList = Array.from(
+    new Set(
+      exercises.map((ex) => HOMEWORK_TYPE_LABELS[ex.type] ?? ex.type)
+    )
+  );
+
+  return (
+    <div className="flex h-full flex-col gap-3 p-5">
+      <div className="font-semibold text-sm text-foreground">
+        {homework?.title ?? document.title}
+      </div>
+      {homework?.lessonSummary ? (
+        <p className="line-clamp-2 text-muted-foreground text-xs">
+          {homework.lessonSummary}
+        </p>
+      ) : null}
+      <div className="mt-1 text-muted-foreground text-xs">
+        {exercises.length > 0
+          ? `${exercises.length} exercise${exercises.length === 1 ? "" : "s"}${
+              typeList.length ? ` · ${typeList.join(", ")}` : ""
+            }`
+          : "Homework set"}
+      </div>
+    </div>
+  );
+}
 
 type DocumentToolOutput = {
   id: string;
@@ -256,10 +295,10 @@ const DocumentContent = ({ document }: { document: Document }) => {
   const { artifact } = useArtifact();
 
   const containerClassName = cn(
-    "h-[257px] overflow-hidden rounded-b-2xl border border-t-0 border-border/50 dark:bg-muted",
+    "h-[257px] overflow-hidden rounded-b-2xl border border-t-0 border-border/50 bg-background text-foreground dark:bg-muted",
     {
       "p-4 sm:px-10 sm:py-10": document.kind === "text",
-      "p-0": document.kind === "code",
+      "p-0": document.kind === "code" || document.kind === "homework",
     }
   );
 
@@ -299,8 +338,12 @@ const DocumentContent = ({ document }: { document: Document }) => {
           status={artifact.status}
           title={document.title}
         />
+      ) : document.kind === "homework" ? (
+        <HomeworkPreviewSummary document={document} />
       ) : null}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-muted to-transparent dark:from-muted" />
+      {document.kind !== "homework" && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-background to-transparent dark:from-muted" />
+      )}
       {document.kind === "code" && (
         <div className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-muted to-transparent dark:from-muted" />
       )}
