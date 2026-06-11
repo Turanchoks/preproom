@@ -13,6 +13,7 @@ import type { Student } from "@/lib/db/schema";
 import { cn } from "@/lib/utils";
 import { AgentTrace } from "./agent-trace";
 import { avatarColorClass } from "./avatar";
+import { ProgressBriefButton } from "./progress-brief-button";
 import { StudentArtifactsTab } from "./student-artifacts-tab";
 import { StudentFormDialog } from "./student-form-dialog";
 import { StudentMemoryTab } from "./student-memory-tab";
@@ -112,6 +113,8 @@ function ProfileTab({ student }: { student: Student }) {
           </button>
         }
       />
+
+      <ProgressBriefButton studentId={student.id} />
     </div>
   );
 }

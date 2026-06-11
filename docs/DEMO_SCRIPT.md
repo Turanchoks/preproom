@@ -1,0 +1,186 @@
+# TeachFlow — 3-Minute Demo Recording Script
+
+*Follow this exactly. Total target: 2:55–3:05. Record in one take if possible; if you stumble, cut at a beat boundary and splice.*
+
+---
+
+## Pre-Recording Checklist
+
+Complete these before you press Record. Estimated setup time: 20 minutes.
+
+**Browser setup**
+- [ ] Open Chrome (regular profile) at **https://teachflow-759438277418.us-central1.run.app**
+- [ ] Sign in as **demo@teachflow.app** / password **TeachFlow!Demo2026**
+- [ ] Navigate to student **Anna** (B1 English, Spanish speaker, goal: conversational fluency)
+- [ ] Confirm Anna's fact panel on the right shows at least 3–4 existing facts (past-tense errors, cooking interest, level). If the panel is empty, run the seed script: `psql $POSTGRES_URL -f scripts/seed-demo.sql`
+- [ ] Confirm at least one video has already been analyzed for Anna — the video list in the Student Panel should show status "ready" with a summary
+- [ ] Confirm 2–3 existing artifacts are visible (a lesson plan + a proactively drafted lesson plan from video analysis, titled something like "Next Lesson: Past Tense Consolidation")
+- [ ] Open a second Chrome window in **Incognito** (Cmd+Shift+N) — keep it ready but minimized. Do not navigate yet.
+- [ ] Set browser zoom to **90%** so the split panel fits without scrolling
+
+**Screen setup**
+- [ ] Use a 1920×1080 (or 1440×900) window — no 4K scaling weirdness in the recording
+- [ ] Hide bookmarks bar (Cmd+Shift+B to toggle)
+- [ ] Close all other tabs except the TeachFlow tab
+
+**Audio**
+- [ ] Use a decent mic or AirPods — no fan noise in background
+- [ ] Speak at a natural pace; the script is written slightly under 3 min to give you breathing room
+
+**Seed verification**
+- [ ] Ask Anna "What do we know about Anna?" in the chat — agent should answer from stored facts without searching the web. If it draws a blank, seed failed.
+
+---
+
+## Shot-by-Shot Script
+
+### 0:00 – 0:20 | THE PROBLEM
+
+**On screen:** Start on the **landing page** (`/`). Hero visible: "Your AI Teaching Studio." pricing section partially in view.
+
+**Action:** Slowly scroll down past the hero to the pricing cards. Pause 2 seconds on the pricing section.
+
+**Voiceover:**
+> "Independent language tutors spend about 45 minutes preparing for every student — reviewing notes from last lesson, planning the next one, writing homework by hand. Multiply that by 15 students and you lose an entire workday every week just on prep."
+
+*(At 0:15, click "Open Studio" or the sign-in button — the studio should open immediately because you're already signed in.)*
+
+---
+
+### 0:20 – 1:05 | THE AGENT KNOWS ANNA
+
+**On screen:** The studio opens with **Anna** already selected in the sidebar. The left panel shows the chat thread; the right panel shows the Agent Trace / Student Panel with Anna's known facts.
+
+**Action:**
+1. Point at (hover over) the fact panel on the right. Let it sit visible for 2 seconds.
+2. Type in the chat box: **"What should we focus on in Anna's next lesson?"** — hit Enter.
+3. Watch the Agent Trace panel: tool chips appear ("search_memory", "get_student_profile", possibly "get_video_analysis"). Let the whole response stream in.
+
+**Voiceover (while typing and waiting):**
+> "This is Anna — one of my students. The agent already knows she's B1, that she mixes up past simple and present perfect, and that she's really into cooking. I didn't paste any of that today — the agent remembered it from our previous sessions."
+
+*(Response is streaming — keep talking:)*
+> "I just asked what we should focus on next. Watch the Agent Trace panel — the agent is pulling from Anna's memory facts and the video analysis from her last lesson."
+
+*(Once the response appears and references specific facts like past-tense errors or the video analysis:)*
+> "It answered from evidence — past-tense errors flagged in the lesson recording, goals from her profile. No generic advice."
+
+---
+
+### 1:05 – 1:45 | HOMEWORK STREAMS IN
+
+**On screen:** Still in Anna's chat. The canvas panel on the right is empty or showing the previous artifact.
+
+**Action:**
+1. Type in chat: **"Create homework targeting her past-tense errors — include a listening exercise."** Hit Enter.
+2. Watch the canvas: the homework artifact title appears, then exercises stream in one by one.
+3. Once it finishes (13–15 seconds), scroll through the canvas quickly — show: a fill-in-the-blank, a multiple-choice, the listening exercise with the audio player widget visible.
+4. Look for the **pedagogy check** chip in the Agent Trace panel (should say "pedagogy_reviewer" with a checkmark). Hover or gesture at it.
+5. Click **Share** (top right of the canvas). A share link appears — copy it.
+
+**Voiceover (while homework streams):**
+> "Now I'll ask it to create homework targeting exactly that error — and add a listening exercise."
+
+*(Exercises appearing:)*
+> "Watch the canvas — exercises are streaming in live. Fill-in-the-blank, a listening clip generated by Gemini TTS, multiple choice. All calibrated to B1."
+
+*(Pointing at pedagogy chip:)*
+> "A second agent reviewed the set against a pedagogy rubric before it reached me. That chip means it passed."
+
+*(Clicking share:)*
+> "One click — the homework is live at a public link. No account needed for the student."
+
+---
+
+### 1:45 – 2:00 | STUDENT DOES THE HOMEWORK
+
+**On screen:** Switch to the **Incognito window**. Paste the share link and navigate.
+
+**Action:**
+1. Paste the share link into the incognito browser. The public quiz page loads.
+2. Do the **first exercise** (multiple choice) — click a wrong answer first to show the red feedback, then the correct one to show green.
+3. Do the **second exercise** (fill-in-the-blank or listening) — press play on the audio clip if it's a listening exercise; type an answer; submit.
+4. Do not finish the full set — two exercises is enough. Results are being saved in the background.
+
+**Voiceover:**
+> "Anna opens the link — no account, no friction. She gets instant feedback on every answer."
+
+*(After the listening clip plays:)*
+> "That audio was generated by Gemini TTS — not a pre-recorded file."
+
+---
+
+### 2:00 – 2:20 | THE BEAT — THE AGENT WORKED WHILE YOU WERE AWAY
+
+**On screen:** Switch back to the **regular Chrome window** with the studio. Navigate to Anna's **artifact list** (Student Panel → Artifacts tab, or scroll the canvas history).
+
+**Action:**
+1. Show the artifact list — highlight two artifacts that were created **without any teacher request**: a lesson plan titled something like "Next Lesson: Past Tense Consolidation (from video analysis)" and a homework set with a similar provenance note.
+2. Open one of them on the canvas (click to load).
+3. Scroll back to the chat and type: **"How did Anna do on her homework?"** Hit Enter.
+4. The agent answers citing the score (e.g., "Anna scored 2 out of 2 on the listening exercise") — wait for it to fully stream.
+
+**Voiceover (pointing at the auto-drafted artifacts):**
+> "Here's the moment. I uploaded a lesson recording earlier. While I was away — no chat, no prompts — the agent watched the video, identified Anna's struggles, and drafted the next lesson plan and homework autonomously. They're already in her artifact list."
+
+*(Back in chat, asking how Anna did:)*
+> "And those two exercises Anna just did? The results flowed straight back into her memory. I can ask the agent right now."
+
+*(Agent answers with the score):*
+> "It knows — because homework results are memory facts. That's a closed learning loop."
+
+---
+
+### 2:20 – 2:50 | TRUST — VALIDATION, EVALS, ARCHITECTURE
+
+**On screen:** Two quick cuts:
+
+**Cut A — Eval numbers (5 seconds)**
+Switch to a browser tab showing `docs/EVALS.md` rendered (or a local preview), or just show the README section on screen. The headline numbers should be visible: 100% schema validity, 4.47/5 pedagogy score.
+
+**Cut B — Architecture diagram (20 seconds)**
+Show the mermaid diagram from the README, or the `docs/architecture.png` file, on screen. Key labels should be readable: ADK, MCP, Gemini multimodal, Cloud Run, Cloud SQL, GCS, Pub/Sub.
+
+**Voiceover (over evals):**
+> "Homework generation is validated automatically — every exercise is parsed against a Zod schema before it reaches the student. On a 10-case golden eval set, it scores 100% schema validity and 4.47 out of 5 on a pedagogy rubric judged by Gemini."
+
+*(Transition to architecture diagram:)*
+> "The stack: ADK TypeScript agent with an MCP exercise catalog. Gemini 3.5 Flash for chat, homework, and multimodal video analysis. Gemini TTS and image gen for media exercises. Cloud Run, Cloud SQL, Cloud Storage, Pub/Sub with OIDC authentication. One service, fully deployed."
+
+---
+
+### 2:50 – 3:00 | CLOSE
+
+**On screen:** Cut back to the **landing page**, hero visible. Or stay on the architecture diagram — either works.
+
+**Voiceover:**
+> "TeachFlow gives every learner a persistent teaching agent that watches lessons, remembers evidence, and turns it into the next teaching action — automatically. Forty-five minutes of prep, down to zero."
+
+*(Optional: one final beat — smile, no voiceover, logo on screen.)*
+
+---
+
+## Timing Summary
+
+| Segment | Time | What you show |
+|---|---|---|
+| Problem + metric | 0:00–0:20 | Landing page, hero + pricing |
+| Agent knows Anna | 0:20–1:05 | Studio, fact panel, agent answers from memory + video |
+| Homework streams | 1:05–1:45 | Homework artifact, pedagogy chip, share link |
+| Student does exercises | 1:45–2:00 | Incognito, quiz player, TTS audio, instant feedback |
+| The Beat (autonomous) | 2:00–2:20 | Auto-drafted artifacts + "How did Anna do?" closed loop |
+| Trust (evals + arch) | 2:20–2:50 | Eval numbers + architecture diagram |
+| Close | 2:50–3:00 | Landing or diagram, innovation line |
+
+**Total: 3:00**
+
+---
+
+## What to Do If Something Breaks
+
+- **Agent takes too long:** Let it stream. If it exceeds 25 seconds with no output, hit stop and say "it can take up to 15 seconds with a live model" — judges understand latency.
+- **Homework canvas doesn't open:** The artifact streaming requires the chat to be in a fresh session. Open a new chat for Anna (sidebar "New Chat") and retry.
+- **Share link returns 404:** The slug is saved to the DB at generation time. Reload the page — it takes a moment to propagate.
+- **Incognito tab shows login prompt:** The `/s/[slug]` route should be public. Check that the share link starts with `/s/` not `/app/`. If it fails, skip the incognito segment and describe what would happen.
+- **Proactive artifacts not there:** Ask the agent "What proactive prep did you do after the last video?" — if the note fact exists, it will describe the artifacts even if they're not visible in the list.
+- **"How did Anna do?" returns no data:** The results API needs the student to have completed at least one exercise AND the fire-and-forget POST to have reached the server. In a pinch, say "results arrive as memory facts — here's what the memory fact looks like" and show the fact panel directly.

@@ -13,8 +13,8 @@ export const guestRegex = /^guest-\d+$/;
 export const DUMMY_PASSWORD = generateDummyPassword();
 
 export const suggestions = [
-  "Plan a 60-min B1 lesson on past simple",
-  "Create interactive homework on greetings",
-  "Summarize what we know about this student",
-  "Suggest a warm-up activity for an A2 learner",
+  "What do you know about this student?",
+  "Plan our next 60-minute lesson",
+  "Create homework from their recent mistakes",
+  "Write a progress brief for their parents",
 ];
