@@ -38,6 +38,12 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Outbound MCP server: external agents authenticate via Authorization Bearer
+  // token inside the handler, not session cookies — never force a redirect.
+  if (pathname.startsWith("/api/mcp")) {
+    return NextResponse.next();
+  }
+
   // Locally-served uploads are public objects (GCS public-URL equivalent).
   if (pathname.startsWith("/api/uploads/serve")) {
     return NextResponse.next();

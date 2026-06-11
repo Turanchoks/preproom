@@ -237,6 +237,21 @@ Guardrails that exist in the codebase today (not aspirational):
   `MCP_ENABLED`, `PROACTIVE_PREP`, `PUBSUB_MODE`) so any path can be disabled
   without code changes.
 
+## Connect your agent (MCP)
+
+TeachFlow is also a **Model Context Protocol server** over Streamable HTTP:
+point Claude Code, Gemini CLI, or Codex at `<base-url>/api/mcp` with an
+`Authorization: Bearer` token and they can list students, save observations, and
+generate lesson plans, homework (with a public student-playable share link), and
+progress briefs — all scoped to the authenticated teacher's own roster. See
+[docs/MCP.md](docs/MCP.md) for per-client setup and token formats.
+
+```bash
+claude mcp add --transport http teachflow \
+  https://teachflow-759438277418.us-central1.run.app/api/mcp \
+  --header "Authorization: Bearer $(printf 'demo@teachflow.app:TeachFlow!Demo2026' | base64)"
+```
+
 ## Stack
 
 - **Agent:** Google **ADK for TypeScript** (`@google/adk`) + **Gemini 3.5 Flash**
