@@ -26,3 +26,8 @@ yarn-error.log*
 next-env.d.ts
 tsconfig.tsbuildinfo
 .uploads/
+
+# internal notes
+.private/
+.uploads/
+docs/harvest/out/

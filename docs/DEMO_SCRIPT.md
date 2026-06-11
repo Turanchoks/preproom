@@ -178,7 +178,7 @@ Show the mermaid diagram from the README, or the `docs/architecture.png` file, o
 
 ## What to Do If Something Breaks
 
-- **Agent takes too long:** Let it stream. If it exceeds 25 seconds with no output, hit stop and say "it can take up to 15 seconds with a live model" — judges understand latency.
+- **Agent takes too long:** Let it stream. If it exceeds 25 seconds with no output, hit stop and say "it can take up to 15 seconds with a live model" — viewers understand latency.
 - **Homework canvas doesn't open:** The artifact streaming requires the chat to be in a fresh session. Open a new chat for Anna (sidebar "New Chat") and retry.
 - **Share link returns 404:** The slug is saved to the DB at generation time. Reload the page — it takes a moment to propagate.
 - **Incognito tab shows login prompt:** The `/s/[slug]` route should be public. Check that the share link starts with `/s/` not `/app/`. If it fails, skip the incognito segment and describe what would happen.
