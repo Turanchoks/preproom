@@ -17,11 +17,10 @@ import {
  *   - 1 'progress' fact: "Homework '<title>': scored X/Y on <date>"
  *   - 1 'error' fact per failed exercise: "Struggled with '<title>' (<type>) ..."
  *
- * NOTE on `source`: the StudentFact.source enum is ["chat","video_analysis",
- * "teacher"] — there is no "homework_results" value and we must not change the
- * schema. We use "teacher" as the closest fit (results originate from the
- * teacher's shared homework workflow, not from chat or video analysis) and set
- * sourceRef to the share slug for traceability.
+ * NOTE on `source`: facts are tagged with the dedicated "homework_result"
+ * source (a type-level varchar enum value; the underlying column has no CHECK
+ * constraint so no migration is needed). The memory tab renders this as a
+ * "from homework results" badge. sourceRef is the share slug for traceability.
  */
 
 const SHORT = 200;
@@ -70,7 +69,7 @@ export async function POST(request: Request) {
     studentId,
     category: "progress",
     fact: `Homework '${docTitle}': scored ${body.score}/${body.total} (${date})`,
-    source: "teacher",
+    source: "homework_result",
     sourceRef: body.slug,
   });
   factIds.push(progress.id);
@@ -84,7 +83,7 @@ export async function POST(request: Request) {
       studentId,
       category: "error",
       fact: `Struggled with '${ex.title}' (${ex.type}) in homework '${docTitle}'`,
-      source: "teacher",
+      source: "homework_result",
       sourceRef: body.slug,
     });
     factIds.push(err.id);

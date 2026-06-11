@@ -1,3 +1,4 @@
+import { CheckCircle2Icon } from "lucide-react";
 import { toast } from "sonner";
 import { Artifact } from "@/components/chat/create-artifact";
 import { DocumentSkeleton } from "@/components/chat/document-skeleton";
@@ -150,6 +151,10 @@ export const homeworkArtifact = new Artifact<"homework", HomeworkArtifactMetadat
 
       return (
         <div className="mx-auto w-full max-w-2xl px-4 py-8 md:px-8">
+          <div className="mb-4 flex items-center gap-1.5 text-emerald-600 text-xs dark:text-emerald-400">
+            <CheckCircle2Icon className="size-3.5" />
+            <span className="font-medium">Validated · Pedagogy-reviewed</span>
+          </div>
           <QuizPlayer homework={homework} mode="preview" />
         </div>
       );

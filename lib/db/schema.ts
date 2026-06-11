@@ -172,7 +172,9 @@ export const studentFact = pgTable("StudentFact", {
     .notNull()
     .default("note"),
   fact: text("fact").notNull(),
-  source: varchar("source", { enum: ["chat", "video_analysis", "teacher"] })
+  source: varchar("source", {
+    enum: ["chat", "video_analysis", "teacher", "homework_result"],
+  })
     .notNull()
     .default("chat"),
   sourceRef: text("sourceRef"),

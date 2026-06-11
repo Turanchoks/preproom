@@ -23,9 +23,9 @@ const features = [
   },
   {
     icon: FileText,
-    title: "Lesson plans & interactive homework",
+    title: "Lesson plans & homework packs",
     description:
-      "Generate structured lesson plans and playable quizzes on a live canvas. Multiple-choice, fill-the-gaps, word puzzles and more.",
+      "Generate structured lesson plans and interactive homework packs on a live canvas. Multiple-choice, fill-the-gaps, word puzzles and more.",
   },
   {
     icon: Video,
@@ -70,6 +70,22 @@ const plans = [
       "Video lesson analysis",
       "Automatic memory from recordings",
       "Priority generation",
+    ],
+  },
+  {
+    name: "School",
+    price: "$199",
+    period: "/mo",
+    tagline: "For micro language schools with 5–50 tutors.",
+    cta: "Contact us",
+    ctaHref: "mailto:hello@teachflow.app",
+    featured: false,
+    features: [
+      "Up to 10 teachers",
+      "Shared student roster",
+      "Everything in Studio",
+      "Admin progress briefs",
+      "Quality dashboard",
     ],
   },
 ];
@@ -137,9 +153,9 @@ export default function LandingPage() {
               Your AI teaching studio
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-balance text-lg text-muted-foreground sm:text-xl">
-              A per-student AI copilot for teachers. Persistent agent chat with
-              long-term memory, lesson plans and interactive homework on a live
-              canvas, video lesson analysis, and one-click share links.
+              TeachFlow gives every learner a persistent teaching agent that
+              watches lessons, remembers evidence, and turns it into the next
+              teaching action.
             </p>
             <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Button asChild size="lg">
@@ -243,7 +259,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="mx-auto mt-12 grid max-w-3xl gap-5 sm:grid-cols-2">
+          <div className="mx-auto mt-12 grid max-w-5xl gap-5 sm:grid-cols-3">
             {plans.map((plan) => (
               <div
                 key={plan.name}
@@ -284,10 +300,17 @@ export default function LandingPage() {
                   className="mt-7 w-full"
                   variant={plan.featured ? "default" : "outline"}
                 >
-                  <Link href="/app">
-                    {plan.cta}
-                    <ArrowRight className="size-4" />
-                  </Link>
+                  {"ctaHref" in plan && plan.ctaHref ? (
+                    <a href={plan.ctaHref}>
+                      {plan.cta}
+                      <ArrowRight className="size-4" />
+                    </a>
+                  ) : (
+                    <Link href="/app">
+                      {plan.cta}
+                      <ArrowRight className="size-4" />
+                    </Link>
+                  )}
                 </Button>
               </div>
             ))}

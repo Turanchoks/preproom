@@ -2,6 +2,9 @@
 
 **Google AI Agents Challenge submission · Track 1: Build (Net-New Agents)**
 
+**TeachFlow gives every learner a persistent teaching agent that watches
+lessons, remembers evidence, and turns it into the next teaching action.**
+
 Independent language tutors spend **~45 minutes per student** preparing each
 lesson — reviewing what happened last time, planning the next session, and
 writing homework by hand. TeachFlow **cuts that to under 5 minutes**: a
@@ -14,14 +17,16 @@ sizing, unit economics, and pricing.
 ---
 
 TeachFlow is a per-student AI copilot for teachers. Every student gets a
-persistent agent chat with long-term **agentic memory**: the agent remembers
-strengths, recurring errors, interests and progress, and uses them to draft
-**lesson plans** and **interactive homework** on a live canvas next to the
-chat. Teachers upload lesson recordings; a Gemini multimodal pipeline analyzes
-the video and feeds insights straight into the student's memory — so the next
-chat already knows what happened in yesterday's lesson. Any artifact can be
-shared with one click: students open a public link and do their homework with
-instant feedback, no account needed.
+persistent agent chat with long-term **agentic memory**: the agent accumulates
+evidence from multiple sources — lesson video analysis (Gemini multimodal),
+homework results (scores and per-exercise errors fed back automatically), and
+teacher observations saved as memory facts — and uses that evidence to
+improve the student over time: lesson plans target the right gaps, homework
+packs reinforce the right skills, and progress briefs give teachers and schools
+a clear picture of each learner's trajectory. The agent drafts **lesson plans**
+and **interactive homework packs** on a live canvas next to the chat. Any
+artifact can be shared with one click: students open a public link and do their
+homework with instant feedback, no account needed.
 
 ## How it works
 
@@ -101,8 +106,23 @@ returned** — time that converts directly into more billable lessons.
 - **Tens of millions of independent tutors and teachers worldwide**; language
   tutors are the sharpest wedge because lessons are recurring, recorded, and
   homework-heavy.
-- **ICP:** independent language tutors and small tutoring studios (1–20
-  teachers) who run recurring 1:1 or small-group lessons and assign homework.
+- **ICP:** independent language tutors (adoption beachhead) and **micro
+  language schools with 5–50 tutors** (revenue tier).
+
+### Why micro-schools are the real revenue
+
+Solo tutors are the fastest adoption path — low friction, immediate personal
+ROI (hours of prep returned). But **micro language schools (5–50 tutors)** are
+the better buyer: they have a budget owner, a clear business problem (tutor
+consistency, student handoffs between teachers, parent reporting, quality
+control), and a strong ROI case at the school level. A single TeachFlow
+deployment replaces ad-hoc per-tutor ChatGPT use with a consistent, shared
+system — same lesson-plan quality for every teacher, automatic handoff notes
+when students switch tutors, admin-level progress briefs for parents, and a
+quality dashboard across the roster. We enter through individual tutors at
+$19–49/mo, then expand into the school seat with the $199/mo School plan —
+a land-and-expand motion with a natural upgrade trigger (when a studio hits
+~5 active teachers, the per-seat savings of the School plan are obvious).
 
 ### Unit economics
 
@@ -125,30 +145,37 @@ sessions, a few homework/lesson-plan generations, occasional video analysis and
 media exercises): **~$1–2/student/month** on Studio (with video), **well under
 $1** on Solo (no video analysis).
 
-| Plan | Price | Students | Est. monthly Gemini cost | Est. gross margin |
+| Plan | Price | Target | Est. monthly Gemini cost | Est. gross margin |
 |---|---|---|---|---|
-| **Solo** | $19/mo | up to 15 | ~$3–6 (no video) | **~85–90%** |
-| **Studio** | $49/mo | unlimited (typ. 30–40) | ~$5–10 | **~85–90%** |
+| **Solo** | $19/mo | independent tutor, up to 15 students | ~$3–6 (no video) | **~85–90%** |
+| **Studio** | $49/mo | tutor/small studio, unlimited students | ~$5–10 | **~85–90%** |
+| **School** | $199/mo | micro school, up to 10 teachers | ~$20–40 | **~80–90%** |
 
-At typical roster sizes both tiers land at **~85–90% gross margin** — the heavy
+At typical roster sizes all tiers land at **~80–90% gross margin** — the heavy
 work (video analysis) is the rarest action, and chat/homework generation are
 fractions of a cent each.
 
 ### Pricing
 
 - **Solo — $19/mo:** up to 15 students, per-student agent memory, lesson plans +
-  interactive homework, unlimited share links.
+  interactive homework packs, unlimited share links.
 - **Studio — $49/mo:** unlimited students, **video lesson analysis** with
   automatic memory from recordings, priority generation.
+- **School — $199/mo:** up to 10 teachers, shared student roster, admin
+  progress briefs, quality dashboard — designed for micro language schools
+  (5–50 tutors) that need consistency across teachers and a single billing
+  relationship. [Contact us](mailto:hello@teachflow.app).
 
 ### Go-to-market
 
 - **Tutor communities** (Facebook/Reddit groups, Discords, tutor newsletters) —
-  the prep-time metric is the hook.
+  the prep-time metric is the hook; solo tutors are the adoption beachhead.
 - **Marketplace teachers on Preply / iTalki / Cambly** — they already record
   lessons and assign homework; TeachFlow plugs straight into that workflow.
-- **Small studio pilots** — onboard a 3–8 teacher studio, prove prep-time
-  savings, expand seat by seat.
+- **Micro language school pilots** — onboard a 5–15 teacher school on the
+  School plan ($199/mo), prove consistency + handoff + parent-report value,
+  then expand; schools are the better buyer (budget owner, clear ROI, lower
+  churn) and the natural upgrade from individual Studio accounts.
 
 ### Roadmap
 
@@ -250,3 +277,8 @@ the OIDC-authenticated Pub/Sub push subscription for video analysis.
 5. Share → open `/s/…` in incognito → play the quiz with instant feedback.
 6. Upload a lesson recording → analysis lands as an artifact + new memory facts.
 7. New chat: "What did we cover last lesson?" → the agent answers from memory.
+8. **Closed loop:** back in the share link, complete the homework as the student
+   → scores and per-exercise errors flow automatically back into agent memory →
+   ask "How did Maria do on her homework?" → the agent cites real results.
+   *The agent built a durable evidence record: video analysis, homework
+   performance, teacher notes — all informing the next teaching action.*

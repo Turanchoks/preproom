@@ -507,6 +507,75 @@ export function buildAgentTools(ctx: AgentToolContext): BaseTool[] {
     },
   });
 
+  const createProgressBrief = defineTool({
+    name: "create_progress_brief",
+    description:
+      "Generate a parent/administrator-facing Progress Brief for this student — an evidence-cited summary of strengths, areas worked on, recent progress (quiz scores), and recommended next focus. It opens in the canvas — do NOT paste its content into chat; reference it instead. Takes no arguments (the student is implied by context).",
+    parameters: z.object({}),
+    execute: async () => {
+      try {
+        // Lazy dynamic import: the brief generator pulls server-only deps and
+        // is owned by another track; importing it only when the tool fires
+        // keeps the agent module's import graph light and failure-local.
+        const { generateProgressBrief } = await import("@/lib/briefs/generate");
+        const { documentId, title } = await generateProgressBrief(
+          ctx.studentId,
+          ctx.userId
+        );
+
+        // generateProgressBrief saves the Document but does NOT stream it to the
+        // canvas. Emit the template-native artifact choreography so the saved
+        // brief opens in the canvas for the teacher.
+        const doc = await getLatestDocumentById({ id: documentId });
+        const content = doc?.content ?? "";
+
+        ctx.dataStream.write({
+          type: "data-kind",
+          data: "text",
+          transient: true,
+        });
+        ctx.dataStream.write({
+          type: "data-id",
+          data: documentId,
+          transient: true,
+        });
+        ctx.dataStream.write({
+          type: "data-title",
+          data: title,
+          transient: true,
+        });
+        ctx.dataStream.write({
+          type: "data-clear",
+          data: null,
+          transient: true,
+        });
+        ctx.dataStream.write({
+          type: "data-textDelta",
+          data: content,
+          transient: true,
+        });
+        ctx.dataStream.write({
+          type: "data-finish",
+          data: null,
+          transient: true,
+        });
+
+        return {
+          artifactId: documentId,
+          title,
+          note: "Progress brief created in the canvas. Reference it in your reply; do not paste its content.",
+        };
+      } catch (err) {
+        return {
+          error:
+            err instanceof Error
+              ? err.message
+              : "Failed to generate the progress brief.",
+        };
+      }
+    },
+  });
+
   const getExerciseCatalog = defineTool({
     name: "get_exercise_catalog",
     description:
@@ -524,6 +593,7 @@ export function buildAgentTools(ctx: AgentToolContext): BaseTool[] {
     listStudentArtifacts,
     createLessonPlan,
     createHomework,
+    createProgressBrief,
     updateArtifact,
     generateIllustration,
     generateAudioSnippet,

@@ -17,7 +17,8 @@ export const Greeting = () => {
         initial={{ opacity: 0, y: 10 }}
         transition={{ delay: 0.5, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       >
-        Plan a lesson, build interactive homework, or review a student.
+        Plan lessons, build homework packs, and remember everything about your
+        student.
       </motion.div>
     </div>
   );

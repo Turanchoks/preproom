@@ -184,13 +184,17 @@ teachflow/
 - **Business case (30% of judging!):** now written up in full — see the
   [`## Business case`](README.md#business-case) section of the README (lead
   metric: prep cut from ~45 min to under 5 min; market sizing; per-action
-  Gemini unit-economics table vs Solo $19/mo and Studio $49/mo at ~85–90%
-  gross margin; go-to-market and roadmap). The landing page
-  (`app/(marketing)/page.tsx`) carries a matching 2-tier pricing section.
-  Wedge: per-student memory + autonomous post-video prep.
-- **Innovation framing:** what single sentence makes judges go "oh, that's new"?
-  Candidate: "Every student gets their own agent — memory with agency, fed by
-  real lesson footage."
+  Gemini unit-economics table vs Solo $19/mo, Studio $49/mo, and School
+  $199/mo at ~80–90% gross margin; go-to-market and roadmap). The landing page
+  (`app/(marketing)/page.tsx`) carries a matching 3-tier pricing section.
+  **Wedge:** solo tutors are the adoption beachhead, but **micro language
+  schools (5–50 tutors) are the revenue** — better buyer, budget owner, clear
+  ROI from consistency across tutors, handoff notes, parent progress briefs,
+  and quality dashboards. The School tier ($199/mo, up to 10 teachers) is the
+  land-and-expand upgrade trigger once individual tutors hit ~5 colleagues.
+- **Innovation framing:** "TeachFlow gives every learner a persistent teaching
+  agent that watches lessons, remembers evidence, and turns it into the next
+  teaching action."
 - **Demo beats:** anything in §7 that drags or is missing a wow moment?
 - **Risks we're watching:** Gemini latency during live judging (mitigation:
   pre-seeded demo data + the recorded video); ADK streaming edge cases
