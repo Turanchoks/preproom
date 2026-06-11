@@ -1,7 +1,7 @@
 // Generates per-scene narration WAVs with Gemini TTS (voice Kore) via lib/media/tts.
 // Run under the server-only shim:
 //   npx tsx --require ./scripts/_no-server-only.cjs scripts/video/narrate.ts
-// Output: /tmp/teachflow-video/audio/<scene>.wav  (+ manifest.json with durations)
+// Output: /tmp/preproom-video/audio/<scene>.wav  (+ manifest.json with durations)
 import { config } from "dotenv";
 config({ path: ".env.local" });
 
@@ -9,16 +9,16 @@ import { generateSpeech } from "@/lib/media/tts";
 import { writeFileSync, mkdirSync, existsSync, readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 
-const OUT = "/tmp/teachflow-video/audio";
+const OUT = "/tmp/preproom-video/audio";
 mkdirSync(OUT, { recursive: true });
 
 // Narration lines, trimmed to fit each scene. Light pacing cues steer Gemini.
 // Keep them tight — total target ~2:50.
 const LINES: Record<string, string> = {
   "card-open":
-    "Say warmly and clearly: TeachFlow — a persistent teaching agent for every language learner.",
+    "Say warmly and clearly: PrepRoom — a persistent teaching agent for every language learner.",
   landing:
-    "Independent language tutors spend about forty-five minutes preparing for every single student. Multiply that across fifteen students, and you lose an entire workday every week — just on prep. TeachFlow gives them their copilot, starting at nineteen dollars a month.",
+    "Independent language tutors spend about forty-five minutes preparing for every single student. Multiply that across fifteen students, and you lose an entire workday every week — just on prep. PrepRoom gives them their copilot, starting at nineteen dollars a month.",
   "studio-anna":
     "This is Anna, one of my students. The agent already knows she's B-one, that she mixes up past tenses, and where her work-call English breaks down. I didn't paste any of that today — every fact is tagged with its source: a chat, or her last lesson video.",
   "chat-focus":
@@ -36,7 +36,7 @@ const LINES: Record<string, string> = {
   arch:
     "The whole thing is one Cloud Run service. An ADK agent with an MCP exercise catalog, Gemini multimodal for chat, homework, and video, Cloud SQL, Cloud Storage, and Pub/Sub. One service, fully deployed.",
   "card-closing":
-    "TeachFlow watches lessons, remembers the evidence, and turns it into the next teaching action — automatically. Forty-five minutes of prep, down to zero.",
+    "PrepRoom watches lessons, remembers the evidence, and turns it into the next teaching action — automatically. Forty-five minutes of prep, down to zero.",
 };
 
 function wavDuration(path: string): number {

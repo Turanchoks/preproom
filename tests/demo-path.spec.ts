@@ -1,5 +1,5 @@
 /**
- * TeachFlow — Full demo-path E2E spec
+ * PrepRoom — Full demo-path E2E spec
  *
  * Covers the critical user journey from landing page through to a student
  * completing a quiz on the public share page. Runs against the dev server at
@@ -37,15 +37,15 @@ let shareUrl: string;
 // ---------------------------------------------------------------------------
 
 test.describe("Step 1: landing page", () => {
-  test("TeachFlow hero is visible on /", async ({ page }) => {
+  test("PrepRoom hero is visible on /", async ({ page }) => {
     await page.goto("/");
     // The hero h1 contains "AI teaching studio" (or similar). Check the brand name.
     await expect(
-      page.getByRole("heading", { name: /teachflow|ai teaching studio/i }).first()
+      page.getByRole("heading", { name: /preproom|ai teaching studio/i }).first()
     ).toBeVisible({ timeout: 15_000 });
 
-    // The header should show the "TeachFlow" brand link.
-    await expect(page.getByRole("link", { name: /teachflow/i }).first()).toBeVisible();
+    // The header should show the "PrepRoom" brand link.
+    await expect(page.getByRole("link", { name: /preproom/i }).first()).toBeVisible();
 
     // NOTE: we intentionally do NOT assert the pricing section here because
     // Phase 4 is actively adding it. The landing renders correctly once the

@@ -78,7 +78,7 @@ const plans = [
     period: "/mo",
     tagline: "For micro language schools with 5–50 tutors.",
     cta: "Contact us",
-    ctaHref: "mailto:hello@teachflow.app",
+    ctaHref: "mailto:hello@preproom.app",
     featured: false,
     features: [
       "Up to 10 teachers",
@@ -121,7 +121,7 @@ export default function LandingPage() {
             <span className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <Sparkles className="size-4" />
             </span>
-            TeachFlow
+            PrepRoom
           </Link>
           <nav className="flex items-center gap-2">
             <Button asChild variant="ghost" size="sm">
@@ -153,7 +153,7 @@ export default function LandingPage() {
               Your AI teaching studio
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-balance text-lg text-muted-foreground sm:text-xl">
-              TeachFlow gives every learner a persistent teaching agent that
+              PrepRoom gives every learner a persistent teaching agent that
               watches lessons, remembers evidence, and turns it into the next
               teaching action.
             </p>
@@ -173,7 +173,7 @@ export default function LandingPage() {
             <div className="mx-auto mt-16 max-w-5xl">
               <div className="overflow-hidden rounded-xl border border-border bg-card shadow-[0_24px_70px_-32px_rgba(0,0,0,0.45)] ring-1 ring-black/5 dark:ring-white/10">
                 <Image
-                  alt="The TeachFlow studio — per-student agent chat alongside a student profile panel."
+                  alt="The PrepRoom studio — per-student agent chat alongside a student profile panel."
                   className="block w-full"
                   height={1800}
                   priority
@@ -342,7 +342,7 @@ export default function LandingPage() {
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-4 px-6 py-8 text-muted-foreground text-sm sm:flex-row">
           <div className="flex items-center gap-2 font-medium text-foreground">
             <Share2 className="size-4" />
-            TeachFlow
+            PrepRoom
           </div>
           <p className="text-center sm:text-right">
             Built with Google ADK + Gemini · Cloud Run · for the Google AI Agents

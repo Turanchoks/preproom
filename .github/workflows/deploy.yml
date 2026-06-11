@@ -25,7 +25,7 @@ jobs:
       # Cloud Run service itself and persist across image deploys.
       - name: Deploy
         run: |
-          gcloud run deploy teachflow \
+          gcloud run deploy preproom \
             --source . \
             --project teachflow-hack-611 \
             --region us-central1 \

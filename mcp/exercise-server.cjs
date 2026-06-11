@@ -21324,14 +21324,14 @@ function getExerciseCatalogPayload() {
 
 // mcp/exercise-server.ts
 var server = new McpServer({
-  name: "teachflow-exercises",
+  name: "preproom-exercises",
   version: "1.0.0"
 });
 server.registerTool(
   "get_exercise_catalog",
   {
     title: "Get exercise catalog",
-    description: "Returns the catalog of interactive exercise types TeachFlow can generate (with their didactic stage, control level, CEFR range, skills, and cognitive budget) plus the pedagogy rubric for sequencing a homework set. Call this to answer what exercises you can create and how to order them by level.",
+    description: "Returns the catalog of interactive exercise types PrepRoom can generate (with their didactic stage, control level, CEFR range, skills, and cognitive budget) plus the pedagogy rubric for sequencing a homework set. Call this to answer what exercises you can create and how to order them by level.",
     inputSchema: {}
   },
   async () => {
@@ -21344,10 +21344,10 @@ server.registerTool(
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  process.stderr.write("teachflow-exercises MCP server ready (stdio)\n");
+  process.stderr.write("preproom-exercises MCP server ready (stdio)\n");
 }
 main().catch((err) => {
-  process.stderr.write(`teachflow-exercises MCP server failed: ${err}
+  process.stderr.write(`preproom-exercises MCP server failed: ${err}
 `);
   process.exit(1);
 });

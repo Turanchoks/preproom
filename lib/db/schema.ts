@@ -143,7 +143,7 @@ export const stream = pgTable(
 
 export type Stream = InferSelectModel<typeof stream>;
 
-// ── TeachFlow additions ──────────────────────────────────────────────
+// ── PrepRoom additions ──────────────────────────────────────────────
 
 export const student = pgTable("Student", {
   id: uuid("id").primaryKey().notNull().defaultRandom(),

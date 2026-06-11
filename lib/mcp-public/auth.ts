@@ -23,8 +23,8 @@ export class McpAuthError extends Error {
   }
 }
 
-/** The demo teacher a TEACHFLOW_MCP_DEMO_TOKEN maps to. */
-const DEMO_EMAIL = "demo@teachflow.app";
+/** The demo teacher a PREPROOM_MCP_DEMO_TOKEN maps to. */
+const DEMO_EMAIL = "demo@preproom.app";
 
 function buildSession(userId: string): Session {
   return {
@@ -72,8 +72,8 @@ async function resolveByCredentials(
  * Resolve the authenticated teacher from an incoming MCP request's
  * `Authorization: Bearer <token>` header. Two accepted token forms:
  *
- *   a) base64("email:password") of any TeachFlow account.
- *   b) the raw value of env TEACHFLOW_MCP_DEMO_TOKEN (if set) → demo teacher.
+ *   a) base64("email:password") of any PrepRoom account.
+ *   b) the raw value of env PREPROOM_MCP_DEMO_TOKEN (if set) → demo teacher.
  *
  * Returns null when no/invalid credentials are supplied so the caller can emit
  * a proper MCP error. Throws only on internal failures.
@@ -92,7 +92,7 @@ export async function resolveMcpAuth(
   }
 
   // Form (b): demo token shortcut.
-  const demoToken = process.env.TEACHFLOW_MCP_DEMO_TOKEN;
+  const demoToken = process.env.PREPROOM_MCP_DEMO_TOKEN;
   if (demoToken && token === demoToken) {
     const users = await getUser(DEMO_EMAIL);
     if (users.length === 0) {

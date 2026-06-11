@@ -7,23 +7,23 @@ import "./globals.css";
 import { SessionProvider } from "next-auth/react";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://teachflow.app"),
+  metadataBase: new URL("https://preproom.app"),
   title: {
-    default: "TeachFlow — Your AI teaching studio",
-    template: "%s · TeachFlow",
+    default: "PrepRoom — Your AI teaching studio",
+    template: "%s · PrepRoom",
   },
   description:
-    "TeachFlow — your AI teaching studio. Per-student agent memory, lesson plans, interactive homework, and video lesson analysis.",
+    "PrepRoom — your AI teaching studio. Per-student agent memory, lesson plans, interactive homework, and video lesson analysis.",
   openGraph: {
-    title: "TeachFlow — Your AI teaching studio",
+    title: "PrepRoom — Your AI teaching studio",
     description:
       "A per-student AI copilot for teachers. Persistent agent chat with long-term memory, lesson plans and interactive homework on a live canvas, video lesson analysis, and one-click share links.",
     type: "website",
-    siteName: "TeachFlow",
+    siteName: "PrepRoom",
   },
   twitter: {
     card: "summary_large_image",
-    title: "TeachFlow — Your AI teaching studio",
+    title: "PrepRoom — Your AI teaching studio",
     description:
       "A per-student AI copilot for teachers. Persistent agent chat with long-term memory, interactive homework, and video lesson analysis.",
   },

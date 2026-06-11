@@ -29,7 +29,7 @@ import { generateUUID } from "@/lib/utils";
 import { buildSystemPrompt, type TranscriptMessage } from "./prompts";
 import { buildAgentTools } from "./tools";
 
-const APP_NAME = "teachflow";
+const APP_NAME = "preproom";
 const MAX_TRANSCRIPT = 30;
 
 // Cost guard ceilings (generous — meant to catch runaway loops, not normal use).
@@ -238,7 +238,7 @@ export async function runStudioAgent(args: RunStudioAgentArgs): Promise<void> {
     process.env.GOOGLE_GENERATIVE_AI_API_KEY ?? process.env.GOOGLE_API_KEY;
 
   const agent = new LlmAgent({
-    name: "teachflow_copilot",
+    name: "preproom_copilot",
     model: new Gemini({ model: modelId, apiKey }),
     instruction,
     // Prior turns are supplied via the transcript block in the instruction.

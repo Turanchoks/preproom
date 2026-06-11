@@ -1,5 +1,5 @@
 /**
- * Generate TeachFlow brand/interface imagery via the Gemini image API.
+ * Generate PrepRoom brand/interface imagery via the Gemini image API.
  *
  *   npx tsx scripts/gen-brand-images.ts            # all images
  *   npx tsx scripts/gen-brand-images.ts hero og    # only named targets

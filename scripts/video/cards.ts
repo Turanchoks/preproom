@@ -1,9 +1,9 @@
 // Generates standalone HTML pages (title cards + architecture full-screen) into
-// /tmp/teachflow-video/cards. Recorded/screenshotted by the recorder.
+// /tmp/preproom-video/cards. Recorded/screenshotted by the recorder.
 import { writeFileSync, mkdirSync, copyFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-const CARDS = "/tmp/teachflow-video/cards";
+const CARDS = "/tmp/preproom-video/cards";
 mkdirSync(CARDS, { recursive: true });
 
 // Copy architecture.png next to the arch card so file:// can load it.
@@ -32,7 +32,7 @@ function titleCard(opts: { title: string; subtitle?: string; kicker?: string; fi
   ${opts.kicker ? `<div class="kicker">${opts.kicker}</div>` : ""}
   <h1>${opts.title}</h1>
   ${opts.subtitle ? `<p>${opts.subtitle}</p>` : ""}
-  <div class="dot"><span class="logo">T</span><span class="brand">Teach<span>Flow</span></span></div>
+  <div class="dot"><span class="logo">P</span><span class="brand">Prep<span>Room</span></span></div>
   </body></html>`;
   writeFileSync(`${CARDS}/${opts.file}`, html);
 }
@@ -78,12 +78,12 @@ function evalsCard() {
   writeFileSync(`${CARDS}/evals.html`, html);
 }
 
-titleCard({ file: "card-open.html", kicker: "AI Teaching Studio", title: "TeachFlow",
+titleCard({ file: "card-open.html", kicker: "AI Teaching Studio", title: "PrepRoom",
   subtitle: "A persistent teaching agent for every language learner." });
 titleCard({ file: "card-autonomous.html", kicker: "The autonomous beat",
   title: "Your copilot worked\nwhile you were away.".replace("\n", "<br/>"),
   subtitle: "It watched the lesson video, found the struggles, and drafted the next lesson — unprompted." });
-titleCard({ file: "card-closing.html", kicker: "TeachFlow",
+titleCard({ file: "card-closing.html", kicker: "PrepRoom",
   title: "45 minutes of prep,\ndown to zero.".replace("\n", "<br/>"),
   subtitle: "Watches lessons. Remembers evidence. Turns it into the next teaching action — automatically." });
 archCard();

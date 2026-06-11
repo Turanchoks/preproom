@@ -30,7 +30,7 @@ import { enrichHomework } from "../lib/media/enrich";
 config({ path: ".env.local" });
 
 // ── Credentials (printed prominently at the end) ──────────────────────────────
-const DEMO_EMAIL = "demo@teachflow.app";
+const DEMO_EMAIL = "demo@preproom.app";
 const DEMO_PASSWORD = "TeachFlow!Demo2026";
 const DEMO_NAME = "Alex Rivera";
 
@@ -371,7 +371,7 @@ Present a **recipe card** for a simple dish (e.g. Spanish omelette / tortilla). 
 ## Wrap-Up & Homework Preview (4 min)
 
 - Quick recap: 3 irregular verbs Anna used correctly today → positive reinforcement.
-- Assign homework via TeachFlow share link (**anna-homework**): focuses on past tense gap-fills, a word-matching activity for cooking verbs, plus a listening clip.
+- Assign homework via PrepRoom share link (**anna-homework**): focuses on past tense gap-fills, a word-matching activity for cooking verbs, plus a listening clip.
 - Next session goal: introduce present perfect for life experiences ("Have you ever…?").
 
 ---
@@ -557,7 +557,7 @@ Present a **recipe card** for a simple dish (e.g. Spanish omelette / tortilla). 
 
 **Student:** Anna García · B1 · Spanish → English
 **Video:** Lesson recording, approx. 45 minutes
-**Analysed by:** TeachFlow AI (Gemini)
+**Analysed by:** PrepRoom AI (Gemini)
 
 ---
 

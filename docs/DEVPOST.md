@@ -1,4 +1,4 @@
-# TeachFlow — Devpost Submission
+# PrepRoom — Devpost Submission
 
 > Ready-to-paste text. Copy each section into the corresponding Devpost field.
 
@@ -6,7 +6,7 @@
 
 ## Headline / Tagline
 
-**An autonomous prep room for tutors: lesson memory, homework, media, and video analysis for every student.**
+**PrepRoom — an autonomous prep room for tutors: lesson memory, homework, media, and video analysis for every student.**
 
 ---
 
@@ -14,13 +14,13 @@
 
 Independent language tutors spend roughly 45 minutes preparing for each student before every lesson — reviewing what happened last time, writing the next plan, drafting homework by hand. Multiply that by 15 students and it is an entire workday every week, unpaid. We asked: what if a tutor could upload last night's lesson recording and come back to find the next plan and homework already drafted — targeted at exactly where the student struggled, with audio clips and image flashcards included?
 
-The answer is not a smarter chatbot. It is a **persistent agent per student** that accumulates evidence across sessions and acts on it autonomously. That is what TeachFlow is.
+The answer is not a smarter chatbot. It is a **persistent agent per student** that accumulates evidence across sessions and acts on it autonomously. That is what PrepRoom is.
 
 ---
 
 ## What it does
 
-TeachFlow is a per-student AI studio for language tutors. Every student gets their own ADK agent with long-term agentic memory. The teacher opens a student, chats with that student's agent, and watches lesson plans and interactive homework stream onto a live canvas next to the chat.
+PrepRoom is a per-student AI studio for language tutors. Every student gets their own ADK agent with long-term agentic memory. The teacher opens a student, chats with that student's agent, and watches lesson plans and interactive homework stream onto a live canvas next to the chat.
 
 **Key capabilities:**
 
@@ -108,17 +108,17 @@ Next.js 16 (App Router, React 19), Vercel AI SDK v6 UI, Tailwind v4 + shadcn/ui.
 - **Homework results analytics** — dashboards over the results that already flow into agent memory: per-student error trends, exercise-type performance, engagement rates.
 - **Multi-teacher studios** — shared student rosters across a small teaching studio, role-based access, studio-level billing.
 - **Agent Engine migration** — move the proactive agent loop to Google Cloud Agent Engine for managed state, retries, and scheduling, replacing the current in-process trigger.
-- **A2A task endpoint** — the agent card at `/.well-known/agent.json` is already published; a full A2A task endpoint would let other agents (e.g., a scheduling agent) commission TeachFlow to prepare materials for a specific student.
+- **A2A task endpoint** — the agent card at `/.well-known/agent.json` is already published; a full A2A task endpoint would let other agents (e.g., a scheduling agent) commission PrepRoom to prepare materials for a specific student.
 - **Google Cloud Marketplace listing** — distribution to GCP-billed organizations (Track 3 trajectory).
 
 ---
 
 ## Testing access
 
-**Live URL:** https://teachflow-759438277418.us-central1.run.app
+**Live URL:** https://preproom-759438277418.us-central1.run.app
 
 **Demo login:**
-- Email: `demo@teachflow.app`
+- Email: `demo@preproom.app`
 - Password: `TeachFlow!Demo2026`
 - The demo account has a pre-seeded student (Anna, B1 English) with existing memory facts, a video analysis, and proactively drafted artifacts ready to view.
 

@@ -7,9 +7,9 @@ import { GoogleGenAI } from "@google/genai";
 import { readFileSync } from "node:fs";
 
 const MODEL = process.env.REVIEW_MODEL || "gemini-3.5-flash";
-const VIDEO = process.argv[2] || "/tmp/teachflow-video/final/teachflow-demo.mp4";
+const VIDEO = process.argv[2] || "/tmp/preproom-video/final/preproom-demo.mp4";
 
-const PROMPT = `You are a demanding hackathon-video judge reviewing a 3-minute product demo for "TeachFlow", an AI teaching studio. Watch the WHOLE video (audio + visuals) closely, roughly scene by scene.
+const PROMPT = `You are a demanding hackathon-video judge reviewing a 3-minute product demo for "PrepRoom", an AI teaching studio. Watch the WHOLE video (audio + visuals) closely, roughly scene by scene.
 
 Score it 1-10 overall, then give specific, actionable feedback. Be concrete with timestamps.
 

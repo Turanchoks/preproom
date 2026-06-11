@@ -1,4 +1,4 @@
-# TeachFlow — 3-Minute Demo Recording Script
+# PrepRoom — 3-Minute Demo Recording Script
 
 *Follow this exactly. Total target: 2:55–3:05. Record in one take if possible; if you stumble, cut at a beat boundary and splice.*
 
@@ -9,8 +9,8 @@
 Complete these before you press Record. Estimated setup time: 20 minutes.
 
 **Browser setup**
-- [ ] Open Chrome (regular profile) at **https://teachflow-759438277418.us-central1.run.app**
-- [ ] Sign in as **demo@teachflow.app** / password **TeachFlow!Demo2026**
+- [ ] Open Chrome (regular profile) at **https://preproom-759438277418.us-central1.run.app**
+- [ ] Sign in as **demo@preproom.app** / password **TeachFlow!Demo2026**
 - [ ] Navigate to student **Anna** (B1 English, Spanish speaker, goal: conversational fluency)
 - [ ] Confirm Anna's fact panel on the right shows at least 3–4 existing facts (past-tense errors, cooking interest, level). If the panel is empty, run the seed script: `psql $POSTGRES_URL -f scripts/seed-demo.sql`
 - [ ] Confirm at least one video has already been analyzed for Anna — the video list in the Student Panel should show status "ready" with a summary
@@ -21,7 +21,7 @@ Complete these before you press Record. Estimated setup time: 20 minutes.
 **Screen setup**
 - [ ] Use a 1920×1080 (or 1440×900) window — no 4K scaling weirdness in the recording
 - [ ] Hide bookmarks bar (Cmd+Shift+B to toggle)
-- [ ] Close all other tabs except the TeachFlow tab
+- [ ] Close all other tabs except the PrepRoom tab
 
 **Audio**
 - [ ] Use a decent mic or AirPods — no fan noise in background
@@ -154,7 +154,7 @@ Show the mermaid diagram from the README, or the `docs/architecture.png` file, o
 **On screen:** Cut back to the **landing page**, hero visible. Or stay on the architecture diagram — either works.
 
 **Voiceover:**
-> "TeachFlow gives every learner a persistent teaching agent that watches lessons, remembers evidence, and turns it into the next teaching action — automatically. Forty-five minutes of prep, down to zero."
+> "PrepRoom gives every learner a persistent teaching agent that watches lessons, remembers evidence, and turns it into the next teaching action — automatically. Forty-five minutes of prep, down to zero."
 
 *(Optional: one final beat — smile, no voiceover, logo on screen.)*
 

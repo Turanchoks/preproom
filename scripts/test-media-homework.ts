@@ -78,7 +78,7 @@ async function generate(modelId: string, session: Session) {
 async function main() {
   const client = postgres(process.env.POSTGRES_URL ?? "");
   const db = drizzle(client);
-  const email = `media-tester-${Date.now()}@teachflow.local`;
+  const email = `media-tester-${Date.now()}@preproom.local`;
   const [guest] = await db
     .insert(user)
     .values({ email, isAnonymous: true })

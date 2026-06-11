@@ -19,7 +19,7 @@ import type { ChatMessage } from "@/lib/types";
 import { buildStudentProfileBlock } from "./prompts";
 import { buildAgentTools } from "./tools";
 
-const APP_NAME = "teachflow-proactive";
+const APP_NAME = "preproom-proactive";
 const MODEL_ID = "gemini-3.5-flash";
 
 /**
@@ -75,7 +75,7 @@ function buildInstruction(opts: {
   profileBlock: string;
 }): string {
   return [
-    `You are TeachFlow's autonomous prep copilot. A lesson video for ${opts.studentName} was JUST analyzed by the system, and no teacher is in the loop — you are working ahead so that the materials are ready when the teacher returns.`,
+    `You are PrepRoom's autonomous prep copilot. A lesson video for ${opts.studentName} was JUST analyzed by the system, and no teacher is in the loop — you are working ahead so that the materials are ready when the teacher returns.`,
     "",
     `Student profile:`,
     opts.profileBlock,
@@ -169,7 +169,7 @@ export async function runProactivePrep(
   });
 
   const agent = new LlmAgent({
-    name: "teachflow_proactive_prep",
+    name: "preproom_proactive_prep",
     model: new Gemini({ model: MODEL_ID, apiKey }),
     instruction,
     includeContents: "default",

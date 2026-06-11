@@ -1,12 +1,12 @@
-# Connect your agent to TeachFlow (MCP)
+# Connect your agent to PrepRoom (MCP)
 
-TeachFlow exposes itself as a **Model Context Protocol (MCP) server** over
+PrepRoom exposes itself as a **Model Context Protocol (MCP) server** over
 **Streamable HTTP**, so external agents — Claude Code, Gemini CLI, Codex, or
 anything that speaks MCP — can drive a teacher's studio: inspect students, record
 observations, and generate lesson plans, homework, and progress briefs.
 
 - **Endpoint:** `<base-url>/api/mcp`
-  - Production: `https://teachflow-759438277418.us-central1.run.app/api/mcp`
+  - Production: `https://preproom-759438277418.us-central1.run.app/api/mcp`
   - Local dev: `http://localhost:3000/api/mcp`
 - **Transport:** Streamable HTTP (stateless). No SSE, no OAuth dance.
 - **Auth:** `Authorization: Bearer <token>` (see [Tokens](#tokens)).
@@ -21,7 +21,7 @@ can never see or touch another teacher's roster, and every `studentId` /
 
 The bearer token takes one of two forms:
 
-1. **Account credentials** — base64 of `email:password` for any TeachFlow
+1. **Account credentials** — base64 of `email:password` for any PrepRoom
    account. Verified against the User table with bcrypt, exactly like the web
    login.
 
@@ -30,15 +30,14 @@ The bearer token takes one of two forms:
    printf 'you@example.com:your-password' | base64
    ```
 
-2. **Demo token** — if the server has `TEACHFLOW_MCP_DEMO_TOKEN` set, sending
+2. **Demo token** — if the server has `PREPROOM_MCP_DEMO_TOKEN` set, sending
    that raw value as the bearer token authenticates as the demo teacher
-   (`demo@teachflow.app`). Handy for read-only demos without sharing a password.
+   (`demo@preproom.app`). Handy for read-only demos without sharing a password.
 
 For the seeded demo account the credentials token is:
 
 ```bash
-printf 'demo@teachflow.app:TeachFlow!Demo2026' | base64
-# => ZGVtb0B0ZWFjaGZsb3cuYXBwOlRlYWNoRmxvdyFEZW1vMjAyNg==
+printf 'demo@preproom.app:TeachFlow!Demo2026' | base64
 ```
 
 ---
@@ -64,14 +63,14 @@ printf 'demo@teachflow.app:TeachFlow!Demo2026' | base64
 ## Claude Code
 
 ```bash
-claude mcp add --transport http teachflow \
-  https://teachflow-759438277418.us-central1.run.app/api/mcp \
-  --header "Authorization: Bearer $(printf 'demo@teachflow.app:TeachFlow!Demo2026' | base64)"
+claude mcp add --transport http preproom \
+  https://preproom-759438277418.us-central1.run.app/api/mcp \
+  --header "Authorization: Bearer $(printf 'demo@preproom.app:TeachFlow!Demo2026' | base64)"
 ```
 
 `-H` is shorthand for `--header`. To talk to a local dev server, swap the URL
 for `http://localhost:3000/api/mcp`. Verify with `claude mcp list`, then ask
-Claude e.g. "list my TeachFlow students".
+Claude e.g. "list my PrepRoom students".
 
 ## Gemini CLI
 
@@ -80,10 +79,10 @@ Add an `mcpServers` entry to `~/.gemini/settings.json`:
 ```json
 {
   "mcpServers": {
-    "teachflow": {
-      "httpUrl": "https://teachflow-759438277418.us-central1.run.app/api/mcp",
+    "preproom": {
+      "httpUrl": "https://preproom-759438277418.us-central1.run.app/api/mcp",
       "headers": {
-        "Authorization": "Bearer ZGVtb0B0ZWFjaGZsb3cuYXBwOlRlYWNoRmxvdyFEZW1vMjAyNg=="
+        "Authorization": "Bearer <base64 of demo@preproom.app:TeachFlow!Demo2026>"
       }
     }
   }
@@ -92,7 +91,7 @@ Add an `mcpServers` entry to `~/.gemini/settings.json`:
 
 `httpUrl` selects the Streamable HTTP transport. Replace the bearer value with
 your own base64 (or the demo token). Restart the CLI; run `/mcp` to confirm the
-`teachflow` server and its tools are listed.
+`preproom` server and its tools are listed.
 
 ## Codex
 
@@ -103,15 +102,15 @@ Codex stores MCP config in `~/.codex/config.toml`. Streamable HTTP servers use a
 # Streamable HTTP support lives in the experimental rmcp client.
 experimental_use_rmcp_client = true
 
-[mcp_servers.teachflow]
-url = "https://teachflow-759438277418.us-central1.run.app/api/mcp"
-bearer_token_env_var = "TEACHFLOW_TOKEN"
+[mcp_servers.preproom]
+url = "https://preproom-759438277418.us-central1.run.app/api/mcp"
+bearer_token_env_var = "PREPROOM_TOKEN"
 ```
 
 Then export the token before launching Codex:
 
 ```bash
-export TEACHFLOW_TOKEN="$(printf 'demo@teachflow.app:TeachFlow!Demo2026' | base64)"
+export PREPROOM_TOKEN="$(printf 'demo@preproom.app:TeachFlow!Demo2026' | base64)"
 codex
 ```
 
@@ -124,7 +123,7 @@ The server speaks JSON-RPC 2.0 over Streamable HTTP. Responses come back as
 
 ```bash
 URL=http://localhost:3000/api/mcp/mcp
-TOKEN=$(printf 'demo@teachflow.app:TeachFlow!Demo2026' | base64)
+TOKEN=$(printf 'demo@preproom.app:TeachFlow!Demo2026' | base64)
 
 # initialize
 curl -s "$URL" \

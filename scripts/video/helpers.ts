@@ -3,13 +3,13 @@
 import { chromium, type Browser, type BrowserContext, type Page } from "@playwright/test";
 import { mkdirSync, readdirSync, renameSync, existsSync, rmSync } from "node:fs";
 
-export const HOST = "https://teachflow-gk7n6cfu6a-uc.a.run.app";
-export const CANON = "https://teachflow-759438277418.us-central1.run.app";
+export const HOST = "https://preproom-gk7n6cfu6a-uc.a.run.app";
+export const CANON = "https://preproom-759438277418.us-central1.run.app";
 export const ANNA = "1dfb4c86-06da-4033-b91f-1826589471b0";
-export const EMAIL = "demo@teachflow.app";
+export const EMAIL = "demo@preproom.app";
 export const PASS = "TeachFlow!Demo2026";
 export const VIEW = { width: 1440, height: 810 };
-export const CLIPS = "/tmp/teachflow-video/clips";
+export const CLIPS = "/tmp/preproom-video/clips";
 
 export async function launch(): Promise<Browser> {
   return chromium.launch({ args: ["--autoplay-policy=no-user-gesture-required", "--force-prefers-reduced-motion"] });
