@@ -151,6 +151,35 @@ async function testImagen(model: string, fileTag: string) {
   fs.writeFileSync(path.join(outDir, `img-${fileTag}.png`), buf);
 }
 
+// ---------------- 1c. TTS burst: N short clips in parallel (rate-limit probe) ----------------
+async function testTtsBurst(n = 5) {
+  const words = ['la manzana', 'el perro', 'la casa', 'el libro', 'la escuela', 'el agua', 'la mesa', 'el gato', 'la flor', 'el sol'];
+  const t0 = Date.now();
+  const settled = await Promise.allSettled(
+    words.slice(0, n).map((w, i) =>
+      ai.models
+        .generateContent({
+          model: 'gemini-2.5-flash-preview-tts',
+          contents: w,
+          config: {
+            responseModalities: ['AUDIO'],
+            speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
+          },
+        })
+        .then((r) => {
+          const d = r.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+          if (!d) throw new Error('no audio');
+          return d.length;
+        }),
+    ),
+  );
+  settled.forEach((s, i) => {
+    if (s.status === 'fulfilled') console.log(`  clip ${i}: OK, b64 len ${s.value}`);
+    else console.log(`  clip ${i}: ${String(s.reason).slice(0, 800)}`);
+  });
+  console.log(`  burst of ${n} parallel done in ${Date.now() - t0}ms`);
+}
+
 async function main() {
   const only = process.argv.slice(2); // e.g. npx tsx test-media-gen.ts img-gemini-3.1-flash-image
   const results: Record<string, string> = {};
@@ -171,6 +200,7 @@ async function main() {
   await run('img-gemini-2.5-flash-image', () => testGeminiImage('gemini-2.5-flash-image', 'gemini25'));
   await run('img-nano-banana-pro', () => testGeminiImage('nano-banana-pro-preview', 'nanobananapro'));
   await run('img-imagen-4-fast', () => testImagen('imagen-4.0-fast-generate-001', 'imagen4fast'));
+  await run('tts-burst', () => testTtsBurst(5));
 
   console.log('\n=== SUMMARY ===');
   for (const [k, v] of Object.entries(results)) console.log(`${k}: ${v}`);
