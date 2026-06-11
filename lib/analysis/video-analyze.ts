@@ -277,6 +277,33 @@ export async function analyzeVideo(videoId: string): Promise<void> {
       summary: result.summary,
       analysisDocumentId: documentId,
     });
+
+    // (d) Autonomous prep loop — "your copilot worked while you were away".
+    // Fire the proactive agent that drafts the next lesson plan + homework and
+    // records a prep note, with NO human chat turn. This must NEVER break the
+    // analysis (which is already persisted above), so it's fully isolated in a
+    // try/catch. Honors the PROACTIVE_PREP=0 kill-switch (checked inside).
+    try {
+      const { runProactivePrep } = await import("@/lib/agent/proactive");
+      const prep = await runProactivePrep({
+        videoId,
+        studentId: student.id,
+      });
+      console.log(
+        JSON.stringify({
+          severity: "INFO",
+          event: "proactive_prep",
+          videoId,
+          studentId: student.id,
+          ran: prep.ran,
+          reason: prep.reason ?? null,
+          factId: prep.factId ?? null,
+          durationMs: prep.durationMs ?? null,
+        })
+      );
+    } catch (prepErr) {
+      console.error(`[analyzeVideo] proactive prep failed for ${videoId}:`, prepErr);
+    }
   } catch (error) {
     console.error(`[analyzeVideo] failed for ${videoId}:`, error);
     await updateVideo({ id: videoId, status: "failed" }).catch((e) =>

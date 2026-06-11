@@ -43,6 +43,12 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Public results sink for the unauthenticated share homework player
+  // (closes the learning loop). Resolves slug -> student server-side.
+  if (pathname.startsWith("/api/share-results")) {
+    return NextResponse.next();
+  }
+
   const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
   const token = await getToken({

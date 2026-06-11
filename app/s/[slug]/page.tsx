@@ -113,7 +113,7 @@ async function ShareContent({
         </div>
       );
     } else {
-      body = <ShareHomework homework={homework} />;
+      body = <ShareHomework homework={homework} slug={slug} />;
     }
   } else {
     // text / code / sheet — render the content as read-only markdown.

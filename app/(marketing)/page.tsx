@@ -3,6 +3,7 @@ import Link from "next/link";
 import {
   ArrowRight,
   Brain,
+  Check,
   FileText,
   Link2,
   Share2,
@@ -37,6 +38,39 @@ const features = [
     title: "Instant share links",
     description:
       "One click turns any homework into a public link students open and complete — no account, no friction.",
+  },
+];
+
+const plans = [
+  {
+    name: "Solo",
+    price: "$19",
+    period: "/mo",
+    tagline: "For independent tutors building a roster.",
+    cta: "Start free",
+    featured: false,
+    features: [
+      "Up to 15 students",
+      "Per-student agent memory",
+      "Lesson plans & interactive homework",
+      "Unlimited share links",
+      "Instant feedback for students",
+    ],
+  },
+  {
+    name: "Studio",
+    price: "$49",
+    period: "/mo",
+    tagline: "For small studios that record lessons.",
+    cta: "Start free",
+    featured: true,
+    features: [
+      "Unlimited students",
+      "Everything in Solo",
+      "Video lesson analysis",
+      "Automatic memory from recordings",
+      "Priority generation",
+    ],
   },
 ];
 
@@ -191,6 +225,72 @@ export default function LandingPage() {
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* Pricing */}
+        <section
+          id="pricing"
+          className="mx-auto w-full max-w-6xl px-6 py-20"
+        >
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="font-semibold text-3xl tracking-tight sm:text-4xl">
+              Simple pricing per teacher
+            </h2>
+            <p className="mt-4 text-muted-foreground">
+              One plan covers all of your students. Start free, upgrade when
+              you grow.
+            </p>
+          </div>
+
+          <div className="mx-auto mt-12 grid max-w-3xl gap-5 sm:grid-cols-2">
+            {plans.map((plan) => (
+              <div
+                key={plan.name}
+                className={
+                  plan.featured
+                    ? "relative rounded-xl border border-primary bg-card p-6 text-card-foreground shadow-[0_24px_70px_-40px_rgba(0,0,0,0.45)] ring-1 ring-primary/20"
+                    : "relative rounded-xl border border-border bg-card p-6 text-card-foreground"
+                }
+              >
+                {plan.featured ? (
+                  <Badge className="absolute top-6 right-6">Most popular</Badge>
+                ) : null}
+                <h3 className="font-medium text-lg">{plan.name}</h3>
+                <div className="mt-3 flex items-baseline gap-1">
+                  <span className="font-semibold text-4xl tracking-tight">
+                    {plan.price}
+                  </span>
+                  <span className="text-muted-foreground text-sm">
+                    {plan.period}
+                  </span>
+                </div>
+                <p className="mt-2 text-muted-foreground text-sm">
+                  {plan.tagline}
+                </p>
+                <ul className="mt-6 space-y-3">
+                  {plan.features.map((feature) => (
+                    <li
+                      key={feature}
+                      className="flex items-start gap-2 text-sm"
+                    >
+                      <Check className="mt-0.5 size-4 shrink-0 text-primary" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Button
+                  asChild
+                  className="mt-7 w-full"
+                  variant={plan.featured ? "default" : "outline"}
+                >
+                  <Link href="/app">
+                    {plan.cta}
+                    <ArrowRight className="size-4" />
+                  </Link>
+                </Button>
+              </div>
+            ))}
           </div>
         </section>
 

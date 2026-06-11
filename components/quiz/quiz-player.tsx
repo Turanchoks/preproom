@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { ChainProvider } from "./chain/ChainProvider";
+import type { PersistenceCallbacks } from "./core/chain-runner";
 import { toChainJSON } from "@/lib/quiz/to-chain";
 import type { HomeworkContent } from "@/lib/quiz/homework-schema";
 
@@ -14,6 +15,11 @@ interface QuizPlayerProps {
    */
   mode?: "preview" | "play";
   onClose?: () => void;
+  /**
+   * Optional persistence hooks forwarded to the chain runner. The share page
+   * uses `onChainFinish` to report results back into the student's memory.
+   */
+  persistence?: PersistenceCallbacks;
 }
 
 /**
@@ -21,7 +27,12 @@ interface QuizPlayerProps {
  * HomeworkContent document into the player's ChainJSON input and renders the
  * chain runner.
  */
-export function QuizPlayer({ homework, mode = "play", onClose }: QuizPlayerProps) {
+export function QuizPlayer({
+  homework,
+  mode = "play",
+  onClose,
+  persistence,
+}: QuizPlayerProps) {
   const chain = useMemo(() => toChainJSON(homework), [homework]);
 
   return (
@@ -32,7 +43,12 @@ export function QuizPlayer({ homework, mode = "play", onClose }: QuizPlayerProps
           : "mx-auto w-full max-w-3xl px-4 py-8"
       }
     >
-      <ChainProvider chain={chain} locale="en" onClose={onClose} />
+      <ChainProvider
+        chain={chain}
+        locale="en"
+        onClose={onClose}
+        persistence={persistence}
+      />
     </div>
   );
 }

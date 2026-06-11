@@ -29,6 +29,25 @@ import { buildAgentTools } from "./tools";
 const APP_NAME = "teachflow";
 const MAX_TRANSCRIPT = 30;
 
+// Cost guard ceilings (generous — meant to catch runaway loops, not normal use).
+// Override with env TOKEN_GUARD_CHARS; events ceiling is a sane constant.
+const TOKEN_GUARD_CHARS = Number(process.env.TOKEN_GUARD_CHARS) || 200_000;
+const TOKEN_GUARD_EVENTS = 500;
+
+/**
+ * Emits one single-line structured JSON record to stdout. On Cloud Run these
+ * lines are ingested by Cloud Logging as structured `jsonPayload` entries that
+ * can be queried (e.g. `jsonPayload.tool="create_homework"`,
+ * `jsonPayload.runId="..."`). Keep it to a single line and JSON-only.
+ */
+function logStructured(fields: Record<string, unknown>): void {
+  try {
+    console.log(JSON.stringify({ ts: new Date().toISOString(), ...fields }));
+  } catch {
+    /* logging must never throw */
+  }
+}
+
 /**
  * Builds the exercise-catalog MCP toolset (stdio child process) when enabled.
  * Returns null when disabled (MCP_ENABLED=0) or if construction throws — the
@@ -143,6 +162,7 @@ export type RunStudioAgentArgs = {
   userId: string;
   uiMessages: ChatMessage[];
   modelId: string;
+  chatId?: string;
 };
 
 /**
@@ -151,14 +171,27 @@ export type RunStudioAgentArgs = {
  * transcript block in the instruction, and streams events to the writer.
  */
 export async function runStudioAgent(args: RunStudioAgentArgs): Promise<void> {
-  const { writer, session, student, userId, uiMessages, modelId } = args;
+  const { writer, session, student, userId, uiMessages, modelId, chatId } =
+    args;
   const studentId = student.id;
+
+  // Per-run trace id correlating every structured log line for this agent run.
+  const runId = crypto.randomUUID();
+  const runStartedAt = Date.now();
+  const logBase = { runId, studentId, chatId: chatId ?? null };
 
   const latest = uiMessages.at(-1);
   if (!latest) {
     return;
   }
   const latestText = textFromParts(latest.parts);
+
+  logStructured({
+    severity: "INFO",
+    message: "run_start",
+    ...logBase,
+    modelId,
+  });
 
   // Load context for the instruction. searchStudentFacts is keyword-based;
   // we combine the most recent facts with a search on the user message.
@@ -230,6 +263,14 @@ export async function runStudioAgent(args: RunStudioAgentArgs): Promise<void> {
   let started = false;
   let aggregated = "";
 
+  // Observability + cost-guard accounting.
+  let eventCount = 0;
+  let outputChars = 0;
+  let costGuardTriggered = false;
+  // Maps a function-call name to the wall-clock time it was first observed, so
+  // tool_result lines can report an approximate latency (ms).
+  const toolStartTimes = new Map<string, number>();
+
   const ensureStart = () => {
     if (!started) {
       writer.write({ type: "text-start", id: blockId });
@@ -244,12 +285,41 @@ export async function runStudioAgent(args: RunStudioAgentArgs): Promise<void> {
       newMessage,
       runConfig: { streamingMode: StreamingMode.SSE },
     })) {
-      if (handleToolActivity(writer, event)) {
+      eventCount += 1;
+
+      if (handleToolActivity(writer, event, logBase, toolStartTimes)) {
         toolActivitySeen = true;
       }
 
       const parts = event.content?.parts ?? [];
       const eventText = textFromEventParts(parts);
+      outputChars += eventText.length;
+
+      // Cost guard: abort the runner loop gracefully past a generous ceiling.
+      if (
+        !costGuardTriggered &&
+        (outputChars > TOKEN_GUARD_CHARS || eventCount > TOKEN_GUARD_EVENTS)
+      ) {
+        costGuardTriggered = true;
+        logStructured({
+          severity: "WARNING",
+          message: "cost_guard_triggered",
+          ...logBase,
+          eventCount,
+          outputChars,
+          limitChars: TOKEN_GUARD_CHARS,
+          limitEvents: TOKEN_GUARD_EVENTS,
+        });
+        ensureStart();
+        writer.write({
+          type: "text-delta",
+          id: blockId,
+          delta:
+            "\n\n_(Stopping here — this response hit the per-run budget guard. Ask me to continue if you need more.)_",
+        });
+        streamedAny = true;
+        break;
+      }
 
       if (eventText) {
         if (event.partial) {
@@ -295,6 +365,15 @@ export async function runStudioAgent(args: RunStudioAgentArgs): Promise<void> {
         console.error("runStudioAgent: MCP toolset close failed:", err);
       });
     }
+    logStructured({
+      severity: "INFO",
+      message: "run_end",
+      ...logBase,
+      ms: Date.now() - runStartedAt,
+      eventCount,
+      outputChars,
+      costGuardTriggered,
+    });
   }
 
   // The agent produced no text and ran no tools — usually a model/quota error
@@ -321,25 +400,44 @@ function textFromEventParts(parts: GenAiPart[]): string {
 
 function handleToolActivity(
   writer: UIMessageStreamWriter<ChatMessage>,
-  event: Event
+  event: Event,
+  logBase: Record<string, unknown>,
+  toolStartTimes: Map<string, number>
 ): boolean {
   let saw = false;
   const calls = getFunctionCalls(event);
   for (const call of calls) {
     saw = true;
+    const tool = call.name ?? "tool";
+    toolStartTimes.set(tool, Date.now());
     writer.write({
       type: "data-toolActivity",
-      data: { name: call.name ?? "tool", status: "running" },
+      data: { name: tool, status: "running" },
       transient: true,
+    });
+    logStructured({
+      severity: "INFO",
+      message: "tool_call",
+      ...logBase,
+      tool,
     });
   }
   const responses = getFunctionResponses(event);
   for (const resp of responses) {
     saw = true;
+    const tool = resp.name ?? "tool";
+    const startedAt = toolStartTimes.get(tool);
     writer.write({
       type: "data-toolActivity",
-      data: { name: resp.name ?? "tool", status: "done" },
+      data: { name: tool, status: "done" },
       transient: true,
+    });
+    logStructured({
+      severity: "INFO",
+      message: "tool_result",
+      ...logBase,
+      tool,
+      ms: typeof startedAt === "number" ? Date.now() - startedAt : null,
     });
   }
   return saw;

@@ -181,10 +181,13 @@ teachflow/
 
 ## 8. Open questions / where a fresh brain helps
 
-- **Business case (30% of judging!):** sharpest framing of market + pricing?
-  Current thinking: solo tutors & micro-schools, $19–29/mo per teacher,
-  prep-time savings (2–4 h/week) as the wedge; per-student memory as moat.
-  Better angles welcome.
+- **Business case (30% of judging!):** now written up in full — see the
+  [`## Business case`](README.md#business-case) section of the README (lead
+  metric: prep cut from ~45 min to under 5 min; market sizing; per-action
+  Gemini unit-economics table vs Solo $19/mo and Studio $49/mo at ~85–90%
+  gross margin; go-to-market and roadmap). The landing page
+  (`app/(marketing)/page.tsx`) carries a matching 2-tier pricing section.
+  Wedge: per-student memory + autonomous post-video prep.
 - **Innovation framing:** what single sentence makes judges go "oh, that's new"?
   Candidate: "Every student gets their own agent — memory with agency, fed by
   real lesson footage."

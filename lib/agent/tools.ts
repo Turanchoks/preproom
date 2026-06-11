@@ -28,7 +28,7 @@ import {
 } from "@/lib/db/queries-studio";
 import type { ChatMessage } from "@/lib/types";
 import { generateUUID } from "@/lib/utils";
-import { buildStudentProfileBlock } from "./prompts";
+import { buildPedagogyBlock, buildStudentProfileBlock } from "./prompts";
 
 /**
  * Thin wrapper around ADK's FunctionTool. The app's `zod` install and ADK's
@@ -146,6 +146,49 @@ function buildWebSearchTool(ctx: AgentToolContext): AgentTool | null {
     return new AgentTool({ agent: searchAgent });
   } catch (err) {
     console.error("buildWebSearchTool: failed to build web_search tool:", err);
+    return null;
+  }
+}
+
+/**
+ * Builds a `pedagogy_reviewer` tool as an AgentTool wrapping a sub-agent
+ * (gemini-3.5-flash) that critiques a homework set against the compact pedagogy
+ * rubric. Same isolation pattern as `buildWebSearchTool`: a focused LlmAgent
+ * exposed to the main agent as a callable tool. The sub-agent is instructed to
+ * emit strict JSON {score:1-5, issues:[], suggestions:[]}; callers parse
+ * leniently. Returns null if construction fails (the loop then simply skips the
+ * critic, never blocking homework creation).
+ */
+function buildPedagogyReviewerTool(ctx: AgentToolContext): AgentTool | null {
+  try {
+    const apiKey =
+      process.env.GOOGLE_GENERATIVE_AI_API_KEY ?? process.env.GOOGLE_API_KEY;
+    const reviewer = new LlmAgent({
+      name: "pedagogy_reviewer",
+      description:
+        "Reviews a freshly created homework set against the pedagogy rubric for this student. Pass the homework as JSON (or a description of its exercises) plus the student context (CEFR level, target language, goals). Returns a STRICT JSON critique {score:1-5, issues:string[], suggestions:string[]}. Call this once right after create_homework and report the score to the teacher; treat it as advisory feedback (do not auto-revise unless the teacher asks).",
+      model: new Gemini({ model: ctx.modelId, apiKey }),
+      instruction: `You are a rigorous pedagogy reviewer for a language-teaching tool. You are given a homework exercise set (as JSON or a description) and the student's context (CEFR level, target language, goals, recurring errors).
+
+Evaluate the homework against this rubric:
+
+${buildPedagogyBlock()}
+
+Score the set 1-5 on overall pedagogical quality, weighing: CEFR-appropriateness of every exercise, correct didactic-stage ordering, monotonic control-level progression, one-new-pattern-per-item, recycle-don't-repeat, self-study suitability (deterministic / self-checkable), and relevance to the student's goals and recurring errors.
+
+Scoring guide: 5 = exemplary; 4 = solid, minor nits; 3 = usable but real sequencing/level problems; 1-2 = significant violations (wrong CEFR, production before practice, mixed patterns, non-self-checkable bulk).
+
+Respond with ONLY a single JSON object, no prose, no markdown fences:
+{"score": <integer 1-5>, "issues": ["<concrete problem>", ...], "suggestions": ["<concrete actionable fix phrased as an instruction for update_artifact>", ...]}
+
+Keep issues and suggestions concise (each a short sentence). If the set is excellent, return score 5 with empty arrays.`,
+    });
+    return new AgentTool({ agent: reviewer });
+  } catch (err) {
+    console.error(
+      "buildPedagogyReviewerTool: failed to build pedagogy_reviewer tool:",
+      err
+    );
     return null;
   }
 }
@@ -495,6 +538,11 @@ export function buildAgentTools(ctx: AgentToolContext): BaseTool[] {
   const webSearch = buildWebSearchTool(ctx);
   if (webSearch) {
     tools.push(webSearch);
+  }
+
+  const pedagogyReviewer = buildPedagogyReviewerTool(ctx);
+  if (pedagogyReviewer) {
+    tools.push(pedagogyReviewer);
   }
 
   return tools;

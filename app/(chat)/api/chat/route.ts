@@ -253,6 +253,7 @@ export async function POST(request: Request) {
               userId: session.user.id,
               uiMessages,
               modelId: chatModel,
+              chatId: id,
             });
           } catch (agentError) {
             console.error("ADK agent run failed:", agentError);
