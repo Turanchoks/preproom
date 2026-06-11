@@ -1,5 +1,8 @@
 import "server-only";
 
+import { existsSync } from "node:fs";
+import path from "node:path";
+
 import {
   type BaseToolset,
   type Event,
@@ -59,11 +62,15 @@ function buildMcpToolset(): MCPToolset | null {
     return null;
   }
   try {
+    // Production image ships a precompiled server (no tsx in standalone build)
+    const compiled = path.join(process.cwd(), "mcp", "exercise-server.cjs");
+    const serverParams = existsSync(compiled)
+      ? { command: "node", args: [compiled] }
+      : { command: "npx", args: ["tsx", "mcp/exercise-server.ts"] };
     return new MCPToolset({
       type: "StdioConnectionParams",
       serverParams: {
-        command: "npx",
-        args: ["tsx", "mcp/exercise-server.ts"],
+        ...serverParams,
         cwd: process.cwd(),
         env: process.env as Record<string, string>,
       },
