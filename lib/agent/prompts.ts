@@ -146,17 +146,46 @@ export function buildPedagogyBlock(): string {
   return `## Pedagogy rubric (follow when designing exercises/sequences)\n${PEDAGOGY_RUBRIC}`;
 }
 
+// Order categories by teaching value so the most actionable observations head
+// the memory block.
+const CATEGORY_ORDER = [
+  "error",
+  "progress",
+  "interest",
+  "strength",
+  "note",
+] as const;
+
 function memoryBlock(name: string, facts: StudentFact[]): string {
   if (facts.length === 0) {
     return `## What you know about ${name}\n(You have no durable observations recorded yet. As soon as the teacher reveals anything about ${name}, persist it with the save_fact tool. Use search_memory before claiming you don't know something.)`;
   }
-  const items = facts
-    .map((f) => {
-      const label = CATEGORY_LABELS[f.category] ?? "Note";
-      return `- [${label} · ${fmtDate(f.createdAt)}] ${f.fact}`;
-    })
-    .join("\n");
-  return `## What you know about ${name}\n${items}`;
+
+  const byCategory: Record<string, StudentFact[]> = {};
+  for (const f of facts) {
+    (byCategory[f.category] ??= []).push(f);
+  }
+
+  const sections: string[] = [];
+  for (const cat of CATEGORY_ORDER) {
+    const rows = byCategory[cat];
+    if (!rows?.length) {
+      continue;
+    }
+    const label = CATEGORY_LABELS[cat] ?? "Note";
+    const items = rows
+      .map((f) => `  - [${fmtDate(f.createdAt)}] ${f.fact}`)
+      .join("\n");
+    sections.push(`**${label}** (${rows.length})\n${items}`);
+  }
+
+  // This injected window is the HIGHEST-SIGNAL slice (recurring errors,
+  // progress, interests, strengths are always retained; older low-value notes
+  // may scroll out as memory grows). So it is a starting point, not the whole
+  // file — search_memory / get_student_profile can surface anything not shown.
+  const note = `_(This is a prioritized slice of ${name}'s memory — high-signal facts are always shown; older notes may be omitted. Call search_memory or get_student_profile to retrieve anything not listed here.)_`;
+
+  return `## What you know about ${name}\n${sections.join("\n\n")}\n\n${note}`;
 }
 
 function artifactIndexBlock(
@@ -211,8 +240,9 @@ PERSONALIZATION IS THE PRODUCT. Every reply and artifact should visibly draw on 
 
   const toolPolicy = `## How to work
 - DURABLE MEMORY: Whenever the teacher reveals anything lasting about ${name} (a recurring error, a strength, an interest, a milestone, an important note), call **save_fact** with the right category (strength | error | interest | note | progress). Persist proactively — this memory powers future personalization.
-- SEARCH FIRST: Before saying you don't know something about ${name}, call **search_memory** to check stored observations. Use **get_student_profile** for a quick refresh and **list_student_artifacts** to see what already exists.
-- HOMEWORK RESULTS: Results from homework the student completed via share links arrive as 'progress'/'error' facts — check memory when the teacher asks how the student did.
+- SEARCH FIRST — MANDATORY: The memory block above is only a prioritized SLICE of ${name}'s file, not the whole thing. Whenever the teacher asks a question ABOUT ${name} (their errors, family, goals, schedule, history, preferences, "what have we worked on", "what should I target", "remind me…"), call **search_memory** (and/or **get_student_profile**) FIRST and base your answer on the results — even if you think you already see the answer above. Never answer a recall/profile question purely from the injected slice; the fact you need may have scrolled out of the window. Only after searching may you say you don't know something.
+- DON'T LEAD WITH NOISE: low-value '${"note"}' facts (warm-up preferences, minor pronunciation tics) must not crowd out the high-signal essentials — ${name}'s recurring errors, goals, key dates/milestones, and learning-style. When you summarise the student, lead with those essentials.
+- HOMEWORK RESULTS & PRACTICE HISTORY: Results from homework the student completed via share links arrive as 'progress'/'error' facts. When the teacher asks "how did ${name} do?", "what have we practiced/worked on recently?", or for an exercise history, call **search_memory** for progress/error facts AND **list_student_artifacts** for the lesson plans / homework created — then answer from both, not from memory of this chat alone.
 - VIDEOS: Use **list_videos** and **get_video_analysis** to ground your advice in real lesson footage when relevant.
 - ARTIFACTS, NOT CHAT DUMPS: Create lesson plans with **create_lesson_plan** and interactive homework with **create_homework**. These open a live canvas for the teacher. NEVER paste a lesson plan or homework body into the chat — instead create the artifact and refer to it (e.g. "I've drafted the lesson plan in the canvas"). Revise an existing artifact with **update_artifact** using its id from the artifact index.
 - PROGRESS REPORTS: When the teacher asks for a progress report/parent update/brief for a parent or school, use **create_progress_brief** (no arguments needed) — it gathers the student's evidence and opens an evidence-cited brief in the canvas. Reference it in your reply; never paste its body into chat.

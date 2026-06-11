@@ -1,11 +1,22 @@
 "use client";
 
 import { CheckCircle2, XCircle, MinusCircle } from "lucide-react";
+import { useMemo } from "react";
 import { useChainRunner } from "../core/chain-runner";
 
 export function FinalScreen({ onClose }: { onClose?: () => void }) {
   const config = useChainRunner((s) => s.finalScreen);
-  const stats = useChainRunner((s) => s.getStatistics());
+  // NOTE: `getStatistics()` builds a fresh object (with new arrays) on every
+  // call. Selecting it directly makes zustand's `useSyncExternalStore` snapshot
+  // change every render → "getSnapshot should be cached" infinite loop (React
+  // error #185). Select the stable function + its reactive inputs and memoize.
+  const getStatistics = useChainRunner((s) => s.getStatistics);
+  const exerciseStates = useChainRunner((s) => s.exerciseStates);
+  const finishedAt = useChainRunner((s) => s.finishedAt);
+  const stats = useMemo(
+    () => getStatistics(),
+    [getStatistics, exerciseStates, finishedAt],
+  );
 
   const percent =
     stats.totalExercises === 0 ? 0 : Math.round((stats.correctCount / stats.totalExercises) * 100);
@@ -27,7 +38,7 @@ export function FinalScreen({ onClose }: { onClose?: () => void }) {
       </div>
 
       <ul className="mt-6 divide-y divide-gray-100 rounded-xl border border-gray-200">
-        {stats.exerciseResults.map((r) => {
+        {stats.exerciseResults.map((r, i) => {
           const Icon =
             r.status === "correct"
               ? CheckCircle2
@@ -44,7 +55,10 @@ export function FinalScreen({ onClose }: { onClose?: () => void }) {
             <li key={r.id} className="flex items-center gap-3 px-4 py-3 text-sm">
               <Icon className={`h-5 w-5 ${color}`} />
               <span className="flex-1 truncate text-gray-700">
-                {r.id} <span className="text-gray-400">({r.type})</span>
+                Question {i + 1}{" "}
+                <span className="text-gray-400">
+                  ({r.type.replace(/-/g, " ")})
+                </span>
               </span>
               <span className="text-gray-500">{Math.round(r.score * 100)}%</span>
             </li>

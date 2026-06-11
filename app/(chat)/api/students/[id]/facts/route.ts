@@ -33,7 +33,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     return result.error;
   }
 
-  const facts = await getFactsByStudentId({ studentId: id });
+  const facts = await getFactsByStudentId({ studentId: id, prioritize: false });
   return Response.json(facts, { status: 200 });
 }
 

@@ -17,6 +17,7 @@ import {
   generateIllustrationUrl,
 } from "./media-bridge";
 import {
+  findSimilarFact,
   getDocumentsByStudentId,
   getFactsByStudentId,
   getLatestDocumentById,
@@ -209,6 +210,23 @@ export function buildAgentTools(ctx: AgentToolContext): BaseTool[] {
         .describe("The observation, written concisely as a standalone fact."),
     }),
     execute: async ({ category, fact }) => {
+      // Cheap near-duplicate guard: if we already stored a substantially
+      // overlapping fact in this category, skip the insert so memory doesn't
+      // fill with paraphrases over a long relationship.
+      const existing = await findSimilarFact({
+        studentId: ctx.studentId,
+        category,
+        fact,
+      });
+      if (existing) {
+        return {
+          saved: false,
+          deduped: true,
+          existingId: existing.id,
+          existingFact: existing.fact,
+          note: "A near-identical fact is already stored; skipped to avoid duplicates.",
+        };
+      }
       const row = await saveStudentFact({
         studentId: ctx.studentId,
         category,
@@ -231,7 +249,7 @@ export function buildAgentTools(ctx: AgentToolContext): BaseTool[] {
       const facts = await searchStudentFacts({
         studentId: ctx.studentId,
         query,
-        limit: 10,
+        limit: 25,
       });
       return {
         results: facts.map((f) => ({
@@ -253,9 +271,13 @@ export function buildAgentTools(ctx: AgentToolContext): BaseTool[] {
       if (!student) {
         return { error: "Student not found." };
       }
+      // Priority-ranked window: high-signal facts (errors, progress,
+      // interests, strengths) are retained even when many low-value notes have
+      // accumulated, so a profile refresh never silently drops a recurring
+      // error or a key milestone.
       const facts = await getFactsByStudentId({
         studentId: ctx.studentId,
-        limit: 20,
+        limit: 40,
       });
       return {
         profile: {
