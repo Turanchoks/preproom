@@ -1,71 +1,99 @@
-<a href="https://chatbot.ai-sdk.dev/demo">
-  <img alt="Chatbot" src="app/(chat)/opengraph-image.png">
-  <h1 align="center">Chatbot</h1>
-</a>
+# TeachFlow — Your AI Teaching Studio
 
-<p align="center">
-    Chatbot (formerly AI Chatbot) is a free, open-source template built with Next.js and the AI SDK that helps you quickly build powerful chatbot applications.
-</p>
+**Google AI Agents Challenge submission · Track 1: Build (Net-New Agents)**
 
-<p align="center">
-  <a href="https://chatbot.ai-sdk.dev/docs"><strong>Read Docs</strong></a> ·
-  <a href="#features"><strong>Features</strong></a> ·
-  <a href="#model-providers"><strong>Model Providers</strong></a> ·
-  <a href="#deploy-your-own"><strong>Deploy Your Own</strong></a> ·
-  <a href="#running-locally"><strong>Running locally</strong></a>
-</p>
-<br/>
+TeachFlow is a per-student AI copilot for teachers. Every student gets a
+persistent agent chat with long-term **agentic memory**: the agent remembers
+strengths, recurring errors, interests and progress, and uses them to draft
+**lesson plans** and **interactive homework** on a live canvas next to the
+chat. Teachers upload lesson recordings; a Gemini multimodal pipeline analyzes
+the video and feeds insights straight into the student's memory — so the next
+chat already knows what happened in yesterday's lesson. Any artifact can be
+shared with one click: students open a public link and do their homework with
+instant feedback, no account needed.
 
-## Features
+## How it works
 
-- [Next.js](https://nextjs.org) App Router
-  - Advanced routing for seamless navigation and performance
-  - React Server Components (RSCs) and Server Actions for server-side rendering and increased performance
-- [AI SDK](https://ai-sdk.dev/docs/introduction)
-  - Unified API for generating text, structured objects, and tool calls with LLMs
-  - Hooks for building dynamic chat and generative user interfaces
-  - Supports OpenAI, Anthropic, Google, xAI, and other model providers via AI Gateway
-- [shadcn/ui](https://ui.shadcn.com)
-  - Styling with [Tailwind CSS](https://tailwindcss.com)
-  - Component primitives from [Radix UI](https://radix-ui.com) for accessibility and flexibility
-- Data Persistence
-  - [Neon Serverless Postgres](https://vercel.com/marketplace/neon) for saving chat history and user data
-  - [Vercel Blob](https://vercel.com/storage/blob) for efficient file storage
-- [Auth.js](https://authjs.dev)
-  - Simple and secure authentication
+```mermaid
+flowchart LR
+    T([Teacher]) -->|chat per student| RUN
 
-## Model Providers
+    subgraph GCP[Google Cloud]
+        subgraph RUN[Cloud Run — Next.js 16]
+            CHAT["/api/chat — ADK bridge"]
+            AGENT["ADK LlmAgent<br/>gemini-3.5-flash"]
+            TOOLS["FunctionTools<br/>save_fact · search_memory<br/>create_lesson_plan · create_homework<br/>update_artifact · get_video_analysis"]
+            PUSH["/api/pubsub/video-analyze<br/>(OIDC-verified push)"]
+            SHARE["/s/[slug] public share pages"]
+            CHAT --> AGENT --> TOOLS
+        end
+        SQL[(Cloud SQL Postgres<br/>students · memory facts<br/>chats · artifacts · shares)]
+        GCS[(Cloud Storage<br/>lesson videos)]
+        PS[[Pub/Sub<br/>video-analyze]]
+        GEM{{Gemini API<br/>multimodal video analysis<br/>structured exercise generation}}
+    end
 
-This template uses the [Vercel AI Gateway](https://vercel.com/docs/ai-gateway) to access multiple AI models through a unified interface. Models are configured in `lib/ai/models.ts` with per-model provider routing. Included models: Mistral, Moonshot, DeepSeek, OpenAI, and xAI.
+    TOOLS --> SQL
+    T -->|upload lesson video| GCS
+    RUN -->|publish videoId| PS --> PUSH
+    PUSH --> GEM
+    GEM -->|analysis → memory facts + report| SQL
+    S([Student]) -->|share link, no account| SHARE
+```
 
-### AI Gateway Authentication
+1. **Per-student agent (Google ADK + Gemini).** Each request builds an ADK
+   `LlmAgent` whose instruction embeds the student's profile and memory facts.
+   The agent decides what is durable (`save_fact`) — that decision-making is
+   what makes the memory *agentic* rather than transcript-stuffing. ADK events
+   are bridged into an AI SDK UI message stream for token-level streaming UX.
+2. **Artifacts on a canvas.** The agent creates lesson plans (markdown) and
+   homework (structured JSON validated against per-exercise Zod schemas,
+   generated with Gemini structured output) that stream live into the
+   right-hand canvas while the chat continues on the left.
+3. **Video pipeline.** Upload → Cloud Storage → Pub/Sub → push back into the
+   service → Gemini analyzes the actual video against a teaching rubric →
+   written up as an artifact + distilled into memory facts.
+4. **Student share links.** `/s/[slug]` pages are public; homework renders as
+   an interactive quiz player (multiple choice, fill-the-blank, word matching,
+   gap fill, word puzzles, sentence matching) with instant feedback.
 
-**For Vercel deployments**: Authentication is handled automatically via OIDC tokens.
+## Stack
 
-**For non-Vercel deployments**: You need to provide an AI Gateway API key by setting the `AI_GATEWAY_API_KEY` environment variable in your `.env.local` file.
+- **Agent:** Google **ADK for TypeScript** (`@google/adk`) + **Gemini 3.5 Flash**
+- **App:** Next.js 16 (App Router, React 19), Vercel AI SDK UI streaming,
+  Tailwind v4 + shadcn/ui — based on the vercel/ai-chatbot template
+- **Google Cloud:** Cloud Run (single service), Cloud SQL (Postgres 16),
+  Cloud Storage, Pub/Sub (OIDC-authenticated push), Gemini API
+- **DB:** Drizzle ORM
 
-With the [AI SDK](https://ai-sdk.dev/docs/introduction), you can also switch to direct LLM providers like [OpenAI](https://openai.com), [Anthropic](https://anthropic.com), [Cohere](https://cohere.com/), and [many more](https://ai-sdk.dev/providers/ai-sdk-providers) with just a few lines of code.
-
-## Deploy Your Own
-
-You can deploy your own version of Chatbot to Vercel with one click:
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/templates/next.js/chatbot)
-
-## Running locally
-
-You will need to use the environment variables [defined in `.env.example`](.env.example) to run Chatbot. It's recommended you use [Vercel Environment Variables](https://vercel.com/docs/projects/environment-variables) for this, but a `.env` file is all that is necessary.
-
-> Note: You should not commit your `.env` file or it will expose secrets that will allow others to control access to your various AI and authentication provider accounts.
-
-1. Install Vercel CLI: `npm i -g vercel`
-2. Link local instance with Vercel and GitHub accounts (creates `.vercel` directory): `vercel link`
-3. Download your environment variables: `vercel env pull`
+## Run locally
 
 ```bash
 pnpm install
-pnpm db:migrate # Setup database or apply latest database changes
+cp .env.example .env.local   # set POSTGRES_URL + GOOGLE_GENERATIVE_AI_API_KEY (+ GOOGLE_API_KEY)
+pnpm db:push
 pnpm dev
 ```
 
-Your app template should now be running on [localhost:3000](http://localhost:3000).
+Local mode needs **no GCP resources**: uploads land on disk and video analysis
+runs in-process (`PUBSUB_MODE=direct`). Visit `/`, sign in (or continue as
+guest), add a student, and ask the agent to plan a lesson.
+
+## Deploy
+
+```bash
+POSTGRES_URL_PROD=... GEMINI_API_KEY=... AUTH_SECRET_PROD=... ./infra/deploy.sh
+```
+
+Creates/updates the Cloud Run service, wires the Cloud SQL socket, and creates
+the OIDC-authenticated Pub/Sub push subscription for video analysis.
+
+## Demo flow
+
+1. Add a student (level, languages, goals).
+2. Chat: "Maria struggled with past simple again today" → agent saves a memory fact.
+3. "Plan our next 60-minute lesson" → lesson plan streams onto the canvas.
+4. "Now make homework from it" → interactive homework streams in, exercise by exercise.
+5. Share → open `/s/…` in incognito → play the quiz with instant feedback.
+6. Upload a lesson recording → analysis lands as an artifact + new memory facts.
+7. New chat: "What did we cover last lesson?" → the agent answers from memory.
