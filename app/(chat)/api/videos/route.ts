@@ -6,6 +6,7 @@ import {
   createVideo,
   getStudentById,
   getVideosByStudentId,
+  updateVideo,
 } from "@/lib/db/queries-studio";
 import { getSignedPutUrl } from "@/lib/gcs";
 
@@ -69,6 +70,15 @@ export async function POST(request: Request) {
   const objectPath = `videos/${video.id}`;
   const signedUrl = await getSignedPutUrl(objectPath, mimeType);
   const uploadUrl = signedUrl ?? `/api/uploads/direct/${video.id}`;
+
+  if (signedUrl) {
+    // Client PUTs straight to GCS, so the object location is known now;
+    // /complete requires gcsUri to be set.
+    await updateVideo({
+      id: video.id,
+      gcsUri: `gs://${process.env.GCS_BUCKET}/${objectPath}`,
+    });
+  }
 
   return NextResponse.json({ video, uploadUrl, method: "PUT" });
 }
