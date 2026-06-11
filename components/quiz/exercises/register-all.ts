@@ -4,7 +4,7 @@
  * Each call to `registerExercise(type, Component)` makes that type available
  * to ExerciseSlot. This module is imported once for its side effects.
  *
- * Ported from the linqua quizapp. For PrepRoom we ship only the six
+ * Ported from the linqua quizapp. For TutorRoom we ship only the six
  * exercise types the homework artifact contract supports. Authors can still
  * pass an unregistered `type` in their JSON — those fall through to the
  * FallbackExercise renderer.

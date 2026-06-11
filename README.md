@@ -1,13 +1,13 @@
-# PrepRoom — Your AI Teaching Studio
+# TutorRoom — Your AI Teaching Studio
 
 **Google AI Agents Challenge submission · Track 1: Build (Net-New Agents)**
 
-**PrepRoom gives every learner a persistent teaching agent that watches
+**TutorRoom gives every learner a persistent teaching agent that watches
 lessons, remembers evidence, and turns it into the next teaching action.**
 
 Independent language tutors spend **~45 minutes per student** preparing each
 lesson — reviewing what happened last time, planning the next session, and
-writing homework by hand. PrepRoom **cuts that to under 5 minutes**: a
+writing homework by hand. TutorRoom **cuts that to under 5 minutes**: a
 per-student agent with long-term memory drafts the next lesson plan and
 interactive homework on demand, and **turns a 1-hour lesson recording into a
 next-lesson plan + homework with zero teacher time** — drafted autonomously
@@ -16,7 +16,7 @@ sizing, unit economics, and pricing.
 
 ---
 
-PrepRoom is a per-student AI copilot for teachers. Every student gets a
+TutorRoom is a per-student AI copilot for teachers. Every student gets a
 persistent agent chat with long-term **agentic memory**: the agent accumulates
 evidence from multiple sources — lesson video analysis (Gemini multimodal),
 homework results (scores and per-exercise errors fed back automatically), and
@@ -90,7 +90,7 @@ ready" memory note, all persisted before the teacher reopens the app.
 
 ## Business case
 
-**Lead metric.** PrepRoom cuts per-student lesson prep from **~45 minutes to
+**Lead metric.** TutorRoom cuts per-student lesson prep from **~45 minutes to
 under 5 minutes**, and **turns a 1-hour lesson recording into a next-lesson
 plan + homework with zero teacher time** — the agent drafts both autonomously
 after a recording is analyzed, before the teacher even opens the app. For a
@@ -115,7 +115,7 @@ Solo tutors are the fastest adoption path — low friction, immediate personal
 ROI (hours of prep returned). But **micro language schools (5–50 tutors)** are
 the better buyer: they have a budget owner, a clear business problem (tutor
 consistency, student handoffs between teachers, parent reporting, quality
-control), and a strong ROI case at the school level. A single PrepRoom
+control), and a strong ROI case at the school level. A single TutorRoom
 deployment replaces ad-hoc per-tutor ChatGPT use with a consistent, shared
 system — same lesson-plan quality for every teacher, automatic handoff notes
 when students switch tutors, admin-level progress briefs for parents, and a
@@ -164,14 +164,14 @@ fractions of a cent each.
 - **School — $199/mo:** up to 10 teachers, shared student roster, admin
   progress briefs, quality dashboard — designed for micro language schools
   (5–50 tutors) that need consistency across teachers and a single billing
-  relationship. [Contact us](mailto:hello@preproom.app).
+  relationship. [Contact us](mailto:hello@tutorroom.ai).
 
 ### Go-to-market
 
 - **Tutor communities** (Facebook/Reddit groups, Discords, tutor newsletters) —
   the prep-time metric is the hook; solo tutors are the adoption beachhead.
 - **Marketplace teachers on Preply / iTalki / Cambly** — they already record
-  lessons and assign homework; PrepRoom plugs straight into that workflow.
+  lessons and assign homework; TutorRoom plugs straight into that workflow.
 - **Micro language school pilots** — onboard a 5–15 teacher school on the
   School plan ($199/mo), prove consistency + handoff + parent-report value,
   then expand; schools are the better buyer (budget owner, clear ROI, lower
@@ -239,7 +239,7 @@ Guardrails that exist in the codebase today (not aspirational):
 
 ## Connect your agent (MCP)
 
-PrepRoom is also a **Model Context Protocol server** over Streamable HTTP:
+TutorRoom is also a **Model Context Protocol server** over Streamable HTTP:
 point Claude Code, Gemini CLI, or Codex at `<base-url>/api/mcp` with an
 `Authorization: Bearer` token and they can list students, save observations, and
 generate lesson plans, homework (with a public student-playable share link), and
@@ -247,9 +247,9 @@ progress briefs — all scoped to the authenticated teacher's own roster. See
 [docs/MCP.md](docs/MCP.md) for per-client setup and token formats.
 
 ```bash
-claude mcp add --transport http preproom \
-  https://preproom-759438277418.us-central1.run.app/api/mcp \
-  --header "Authorization: Bearer $(printf 'demo@preproom.app:TeachFlow!Demo2026' | base64)"
+claude mcp add --transport http tutorroom \
+  https://tutorroom-759438277418.us-central1.run.app/api/mcp \
+  --header "Authorization: Bearer $(printf 'demo@tutorroom.ai:TeachFlow!Demo2026' | base64)"
 ```
 
 ## Stack

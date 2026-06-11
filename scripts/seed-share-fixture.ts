@@ -18,7 +18,7 @@ import { enrichHomework } from "../lib/media/enrich";
 
 config({ path: ".env.local" });
 
-const DEMO_EMAIL = "demo-teacher@preproom.app";
+const DEMO_EMAIL = "demo-teacher@tutorroom.ai";
 
 const homework: HomeworkContent = {
   title: "Past Tenses — Mixed Practice",
@@ -159,7 +159,7 @@ practise common **irregular verbs**.
 - Pair speaking: "When the phone rang, I was ..."
 
 ## Wrap-up (5 min)
-- Quick homework quiz (shared via PrepRoom).
+- Quick homework quiz (shared via TutorRoom).
 `;
 
 async function main() {

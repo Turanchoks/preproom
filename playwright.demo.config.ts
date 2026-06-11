@@ -7,7 +7,7 @@ import { defineConfig, devices } from "@playwright/test";
  *   npx playwright test -c playwright.demo.config.ts
  *
  * Override the base URL for prod smoke tests:
- *   DEMO_BASE_URL=https://preproom.example.com npx playwright test -c playwright.demo.config.ts
+ *   DEMO_BASE_URL=https://tutorroom.ai npx playwright test -c playwright.demo.config.ts
  */
 
 const baseURL =

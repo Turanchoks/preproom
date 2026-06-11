@@ -15,7 +15,7 @@ export async function generateMetadata({
   const { slug } = await params;
   const result = await getSharedDocumentBySlug({ slug });
   return {
-    title: result ? `${result.document.title} · PrepRoom` : "PrepRoom",
+    title: result ? `${result.document.title} · TutorRoom` : "TutorRoom",
   };
 }
 
@@ -28,9 +28,9 @@ function ShareHeader() {
           href="/"
         >
           <span className="flex size-6 items-center justify-center rounded-md bg-gray-900 text-[11px] font-bold text-white">
-            P
+            T
           </span>
-          Prep<span className="-ml-2 text-blue-600">Room</span>
+          Tutor<span className="-ml-2 text-blue-600">Room</span>
         </Link>
         <span className="text-xs font-medium text-gray-400">
           Shared by your teacher
@@ -49,7 +49,7 @@ function ShareFooter() {
           className="font-medium text-gray-500 transition-colors hover:text-blue-600"
           href="/"
         >
-          PrepRoom
+          TutorRoom
         </Link>
       </p>
     </footer>

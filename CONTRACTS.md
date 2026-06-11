@@ -1,6 +1,6 @@
-# PrepRoom — Build Contracts (internal, for parallel implementation)
+# TutorRoom — Build Contracts (internal, for parallel implementation)
 
-PrepRoom = teacher's AI studio. Teacher picks a student; per-student agent chat
+TutorRoom = teacher's AI studio. Teacher picks a student; per-student agent chat
 (left) + artifact canvas (right). Artifacts: lesson plans (kind `text`) and
 homework (kind `homework`, interactive quiz JSON). Public share links at
 `/s/[slug]`. Lesson videos → GCS → Pub/Sub → Gemini analysis → memory facts.

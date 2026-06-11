@@ -7,23 +7,23 @@ import "./globals.css";
 import { SessionProvider } from "next-auth/react";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://preproom.app"),
+  metadataBase: new URL("https://tutorroom.ai"),
   title: {
-    default: "PrepRoom — Your AI teaching studio",
-    template: "%s · PrepRoom",
+    default: "TutorRoom — Your AI teaching studio",
+    template: "%s · TutorRoom",
   },
   description:
-    "PrepRoom — your AI teaching studio. Per-student agent memory, lesson plans, interactive homework, and video lesson analysis.",
+    "TutorRoom — your AI teaching studio. Per-student agent memory, lesson plans, interactive homework, and video lesson analysis.",
   openGraph: {
-    title: "PrepRoom — Your AI teaching studio",
+    title: "TutorRoom — Your AI teaching studio",
     description:
       "A per-student AI copilot for teachers. Persistent agent chat with long-term memory, lesson plans and interactive homework on a live canvas, video lesson analysis, and one-click share links.",
     type: "website",
-    siteName: "PrepRoom",
+    siteName: "TutorRoom",
   },
   twitter: {
     card: "summary_large_image",
-    title: "PrepRoom — Your AI teaching studio",
+    title: "TutorRoom — Your AI teaching studio",
     description:
       "A per-student AI copilot for teachers. Persistent agent chat with long-term memory, interactive homework, and video lesson analysis.",
   },

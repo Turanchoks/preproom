@@ -34,7 +34,7 @@ async function main() {
   // Real user id from DB — create one if needed.
   const client = postgres(process.env.POSTGRES_URL ?? "");
   const db = drizzle(client);
-  const email = `tester-${Date.now()}@preproom.local`;
+  const email = `tester-${Date.now()}@tutorroom.local`;
   const [guest] = await db
     .insert(user)
     .values({ email, isAnonymous: true })

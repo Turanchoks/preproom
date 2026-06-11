@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# PrepRoom — deploy to Cloud Run.
+# TutorRoom — deploy to Cloud Run.
 # Prereqs (already created): project, billing, APIs, Cloud SQL teachflow-sql,
 # bucket, Pub/Sub topic, service accounts + IAM (see infra/README notes).
 set -euo pipefail
@@ -7,7 +7,7 @@ set -euo pipefail
 PROJECT=teachflow-hack-611
 REGION=us-central1
 ACCOUNT=ipuncho@gmail.com
-SERVICE=preproom
+SERVICE=tutorroom
 SQL_INSTANCE=$PROJECT:$REGION:teachflow-sql
 BUCKET=$PROJECT-videos
 RUN_SA=teachflow-run@$PROJECT.iam.gserviceaccount.com

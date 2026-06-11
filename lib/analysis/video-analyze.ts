@@ -190,7 +190,7 @@ export async function analyzeVideo(videoId: string): Promise<void> {
     if (isGcsMode()) {
       // Download bytes from GCS to a temp file (videos are short demos).
       const bytes = await readFile(video.gcsUri);
-      tempPath = join(tmpdir(), `preproom-${videoId}`);
+      tempPath = join(tmpdir(), `tutorroom-${videoId}`);
       await writeFile(tempPath, bytes);
       uploadPath = tempPath;
     } else {

@@ -18,7 +18,7 @@ import {
 // Homework / lesson-plan / brief generation calls Gemini and can take a while.
 export const maxDuration = 120;
 
-const SERVER_INSTRUCTIONS = `PrepRoom is a language teacher's AI studio. Each teacher owns a roster of students; every student has a profile (CEFR level, native/target language, goals) and a durable memory of facts (strengths, recurring errors, interests, progress notes) built up from chats, lesson-video analysis, and teacher observations.
+const SERVER_INSTRUCTIONS = `TutorRoom is a language teacher's AI studio. Each teacher owns a roster of students; every student has a profile (CEFR level, native/target language, goals) and a durable memory of facts (strengths, recurring errors, interests, progress notes) built up from chats, lesson-video analysis, and teacher observations.
 
 Use these tools to inspect a student, record what you observe, and GENERATE teaching materials:
 - list_students / get_student to orient yourself, then save_observation to persist anything lasting you notice.
@@ -349,7 +349,7 @@ const handler = createMcpHandler(
     );
   },
   {
-    serverInfo: { name: "preproom", version: "1.0.0" },
+    serverInfo: { name: "tutorroom", version: "1.0.0" },
     instructions: SERVER_INSTRUCTIONS,
   },
   {
@@ -389,20 +389,20 @@ function origin(extra: ToolExtra): string {
   if (host) {
     return `${proto}://${host}`;
   }
-  return process.env.PREPROOM_PUBLIC_URL ?? "http://localhost:3000";
+  return process.env.TUTORROOM_PUBLIC_URL ?? "http://localhost:3000";
 }
 
 async function requireAuth(
   extra: ToolExtra
 ): Promise<McpAuth | { error: ReturnType<typeof errorResult> }> {
-  const request = new Request("https://preproom.local/api/mcp", {
+  const request = new Request("https://tutorroom.local/api/mcp", {
     headers: headersFromExtra(extra),
   });
   const auth = await resolveMcpAuth(request);
   if (!auth) {
     return {
       error: errorResult(
-        "Unauthorized. Provide an Authorization: Bearer header — either base64('email:password') of your PrepRoom account, or the demo token."
+        "Unauthorized. Provide an Authorization: Bearer header — either base64('email:password') of your TutorRoom account, or the demo token."
       ),
     };
   }

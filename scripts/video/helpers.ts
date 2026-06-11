@@ -3,13 +3,15 @@
 import { chromium, type Browser, type BrowserContext, type Page } from "@playwright/test";
 import { mkdirSync, readdirSync, renameSync, existsSync, rmSync } from "node:fs";
 
-export const HOST = "https://preproom-gk7n6cfu6a-uc.a.run.app";
-export const CANON = "https://preproom-759438277418.us-central1.run.app";
+// NOTE: tutorroom-759438277418 was 404 at record time (2026-06-12); the
+// serving, fully TutorRoom-branded host is tutorroom-759438277418.
+export const HOST = "https://tutorroom-759438277418.us-central1.run.app";
+export const CANON = "https://tutorroom-759438277418.us-central1.run.app";
 export const ANNA = "1dfb4c86-06da-4033-b91f-1826589471b0";
-export const EMAIL = "demo@preproom.app";
+export const EMAIL = "demo@tutorroom.ai";
 export const PASS = "TeachFlow!Demo2026";
 export const VIEW = { width: 1440, height: 810 };
-export const CLIPS = "/tmp/preproom-video/clips";
+export const CLIPS = "/tmp/tutorroom-video/clips";
 
 export async function launch(): Promise<Browser> {
   return chromium.launch({ args: ["--autoplay-policy=no-user-gesture-required", "--force-prefers-reduced-motion"] });
@@ -145,12 +147,67 @@ export async function typeHuman(page: Page, text: string, perChar = 42) {
   }
 }
 
+// The prod /login page redirects cross-host (CANON -> gk7n6) and the form
+// submit leaves a guest session whose cookies don't carry across hosts. So we
+// log in via the auth API directly and inject the session cookie into the
+// browser context for BOTH Cloud Run hostnames.
+let cachedToken: string | null = null;
+async function apiSessionToken(host: string): Promise<string> {
+  if (cachedToken) return cachedToken;
+  try {
+    const csrfRes = await fetch(`${host}/api/auth/csrf`);
+    const { csrfToken } = (await csrfRes.json()) as { csrfToken: string };
+    const csrfCookie = (csrfRes.headers.getSetCookie?.() ?? [])
+      .map((c) => c.split(";")[0]).join("; ");
+    const res = await fetch(`${host}/api/auth/callback/credentials`, {
+      method: "POST",
+      redirect: "manual",
+      headers: { "content-type": "application/x-www-form-urlencoded", cookie: csrfCookie },
+      body: new URLSearchParams({ email: EMAIL, password: PASS, csrfToken }).toString(),
+    });
+    const setCookies = res.headers.getSetCookie?.() ?? [];
+    const sess = setCookies.find((c) => c.startsWith("__Secure-authjs.session-token="));
+    if (sess) {
+      cachedToken = sess.split(";")[0].split("=").slice(1).join("=");
+      return cachedToken;
+    }
+    console.warn(`credentials login failed (status ${res.status}); using saved session token`);
+  } catch (e) {
+    console.warn("credentials login errored; using saved session token:", String(e).slice(0, 120));
+  }
+  // Fallback: known-good demo session JWT captured 2026-06-12 (expires 2026-07-11).
+  const saved = process.env.PP_SESSION_TOKEN || readSavedToken();
+  if (!saved) throw new Error("login failed and no saved session token available");
+  cachedToken = saved;
+  return cachedToken;
+}
+
+function readSavedToken(): string | null {
+  try {
+    const jar = require("node:fs").readFileSync("/tmp/pp-cookies.txt", "utf8") as string;
+    const line = jar.split("\n").find((l: string) => l.includes("__Secure-authjs.session-token"));
+    return line ? line.trim().split(/\s+/).pop()! : null;
+  } catch { return null; }
+}
+
 export async function login(page: Page, host = HOST) {
-  await page.goto(`${host}/login`, { waitUntil: "networkidle" });
-  await page.locator('input[name="email"]').fill(EMAIL);
-  await page.locator('input[name="password"]').fill(PASS);
-  await page.locator('button[type="submit"]').first().click();
-  await page.waitForTimeout(4500);
+  const token = await apiSessionToken(host);
+  const domains = [
+    "tutorroom-759438277418.us-central1.run.app",
+    "tutorroom-gk7n6cfu6a-uc.a.run.app",
+    "tutorroom-759438277418.us-central1.run.app",
+  ];
+  await page.context().addCookies(domains.map((domain) => ({
+    name: "__Secure-authjs.session-token",
+    value: token,
+    domain,
+    path: "/",
+    httpOnly: true,
+    secure: true,
+    sameSite: "Lax" as const,
+  })));
+  await page.goto(`${host}/app`, { waitUntil: "networkidle" });
+  await page.waitForTimeout(1500);
 }
 
 export async function clickTab(page: Page, name: string) {

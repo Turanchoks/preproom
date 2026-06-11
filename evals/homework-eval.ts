@@ -1,5 +1,5 @@
 /**
- * PrepRoom — Homework generation eval harness.
+ * TutorRoom — Homework generation eval harness.
  *
  *   npx tsx --require ./scripts/_no-server-only.cjs evals/homework-eval.ts
  *
@@ -759,7 +759,7 @@ async function main() {
   // Real guest user id for the fake session.
   const client = postgres(process.env.POSTGRES_URL ?? "");
   const db = drizzle(client);
-  const email = `eval-${Date.now()}@preproom.local`;
+  const email = `eval-${Date.now()}@tutorroom.local`;
   const [guest] = await db
     .insert(user)
     .values({ email, isAnonymous: true })

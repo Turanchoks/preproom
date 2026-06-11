@@ -19,7 +19,7 @@ const want = (n: string) => only.length === 0 || only.includes(n);
 
 async function card(browser: Browser, file: string, name: string, holdMs: number) {
   const { ctx, page } = await newScene(browser);
-  await page.goto(`file:///tmp/preproom-video/cards/${file}`, { waitUntil: "networkidle" });
+  await page.goto(`file:///tmp/tutorroom-video/cards/${file}`, { waitUntil: "networkidle" });
   await page.waitForTimeout(holdMs);
   console.log("clip:", await finishScene(ctx, page, name));
 }

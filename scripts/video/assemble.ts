@@ -8,10 +8,10 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 const FF = "/opt/homebrew/bin/ffmpeg";
 const FP = "/opt/homebrew/bin/ffprobe";
-const CLIPS = "/tmp/preproom-video/clips";
-const AUDIO = "/tmp/preproom-video/audio";
-const SCENES = "/tmp/preproom-video/scenes";
-const FINAL = "/tmp/preproom-video/final";
+const CLIPS = "/tmp/tutorroom-video/clips";
+const AUDIO = "/tmp/tutorroom-video/audio";
+const SCENES = "/tmp/tutorroom-video/scenes";
+const FINAL = "/tmp/tutorroom-video/final";
 mkdirSync(SCENES, { recursive: true });
 mkdirSync(FINAL, { recursive: true });
 
@@ -130,7 +130,7 @@ function buildScene(s: Scene): string {
 function buildArchScene(): string {
   const out = `${SCENES}/arch.mp4`;
   const narr = `${AUDIO}/arch.wav`;
-  const png = "/tmp/preproom-video/cards/architecture.png";
+  const png = "/tmp/tutorroom-video/cards/architecture.png";
   const narrDur = manifest["arch"].duration;
   const pad = 1.2;
   const total = narrDur + pad;
@@ -196,7 +196,7 @@ function main() {
     if (!existsSync(`${CLIPS}/${s.clip}.webm`)) { console.log(`SKIP ${s.name} (no clip)`); continue; }
     built.push(buildScene(s));
   }
-  const finalOut = `${FINAL}/preproom-demo.mp4`;
+  const finalOut = `${FINAL}/tutorroom-demo.mp4`;
   concatXfade(built, finalOut, 0.4);
   const total = dur(finalOut);
   console.log(`\nFINAL: ${finalOut}  ${Math.floor(total/60)}:${String(Math.round(total%60)).padStart(2,"0")} (${total.toFixed(1)}s), ${built.length} scenes`);

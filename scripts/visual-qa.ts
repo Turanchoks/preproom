@@ -7,7 +7,7 @@ import { mkdirSync } from "node:fs";
 import { type Browser, chromium, type Page } from "@playwright/test";
 
 const BASE = process.env.QA_BASE ?? "http://localhost:3000";
-const OUT = "/tmp/preproom-shots";
+const OUT = "/tmp/tutorroom-shots";
 
 mkdirSync(OUT, { recursive: true });
 
