@@ -13,7 +13,6 @@ import {
   type SQL,
 } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
 import type { ArtifactKind } from "@/components/chat/artifact";
 import type { VisibilityType } from "@/components/chat/visibility-selector";
 import { ChatbotError } from "../errors";
@@ -32,8 +31,9 @@ import {
   vote,
 } from "./schema";
 import { generateHashedPassword } from "./utils";
+import { createPgClient } from "./client";
 
-const client = postgres(process.env.POSTGRES_URL ?? "");
+const client = createPgClient();
 const db = drizzle(client);
 
 export async function getUser(email: string): Promise<User[]> {

@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  ActivityIcon,
   BrainIcon,
   FileTextIcon,
   UserIcon,
@@ -10,19 +11,21 @@ import { useState } from "react";
 import { useArtifactSelector } from "@/hooks/use-artifact";
 import type { Student } from "@/lib/db/schema";
 import { cn } from "@/lib/utils";
+import { AgentTrace } from "./agent-trace";
 import { avatarColorClass } from "./avatar";
 import { StudentArtifactsTab } from "./student-artifacts-tab";
 import { StudentFormDialog } from "./student-form-dialog";
 import { StudentMemoryTab } from "./student-memory-tab";
 import { StudentVideosTab } from "./student-videos-tab";
 
-type Tab = "profile" | "memory" | "artifacts" | "videos";
+type Tab = "profile" | "memory" | "artifacts" | "videos" | "activity";
 
 const TABS: { id: Tab; label: string; icon: typeof UserIcon }[] = [
   { id: "profile", label: "Profile", icon: UserIcon },
   { id: "memory", label: "Memory", icon: BrainIcon },
   { id: "artifacts", label: "Artifacts", icon: FileTextIcon },
   { id: "videos", label: "Videos", icon: VideoIcon },
+  { id: "activity", label: "Activity", icon: ActivityIcon },
 ];
 
 export function StudentPanel({ student }: { student: Student }) {
@@ -77,6 +80,7 @@ export function StudentPanel({ student }: { student: Student }) {
         {tab === "memory" && <StudentMemoryTab studentId={student.id} />}
         {tab === "artifacts" && <StudentArtifactsTab studentId={student.id} />}
         {tab === "videos" && <StudentVideosTab studentId={student.id} />}
+        {tab === "activity" && <AgentTrace />}
       </div>
     </aside>
   );

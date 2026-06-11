@@ -26,7 +26,8 @@ gcloud run deploy "$SERVICE" \
   --timeout=600 --memory=2Gi --cpu=2 \
   --min-instances=1 --max-instances=1 \
   --set-env-vars="GOOGLE_CLOUD_PROJECT=$PROJECT,GCS_BUCKET=$BUCKET,PUBSUB_TOPIC=video-analyze,PUBSUB_MODE=${PUBSUB_MODE:-pubsub},PUBSUB_PUSH_SA_EMAIL=$PUSH_SA,USE_ADK=${USE_ADK:-1}" \
-  --set-env-vars="^@^POSTGRES_URL=$POSTGRES_URL_PROD" \
+  --set-env-vars="^|^POSTGRES_URL=$POSTGRES_URL_PROD" \
+  --set-env-vars="POSTGRES_SOCKET_HOST=/cloudsql/$SQL_INSTANCE" \
   --set-env-vars="GOOGLE_GENERATIVE_AI_API_KEY=$GEMINI_API_KEY,GOOGLE_API_KEY=$GEMINI_API_KEY,AUTH_SECRET=$AUTH_SECRET_PROD"
 
 URL=$(gcloud run services describe "$SERVICE" --project="$PROJECT" --region="$REGION" --account="$ACCOUNT" --format='value(status.url)')

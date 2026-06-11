@@ -2,7 +2,6 @@ import "server-only";
 
 import { and, desc, eq, ilike, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
 import {
   chat,
   type Chat,
@@ -18,8 +17,9 @@ import {
   type Video,
 } from "./schema";
 
-// biome-ignore lint: server-only module
-const client = postgres(process.env.POSTGRES_URL ?? "");
+import { createPgClient } from "./client";
+
+const client = createPgClient();
 const db = drizzle(client);
 
 // ── Students ─────────────────────────────────────────────────────────
