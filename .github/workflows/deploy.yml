@@ -1,0 +1,32 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      # Service env vars (DB, Gemini key, buckets, Pub/Sub) are managed on the
+      # Cloud Run service itself and persist across image deploys.
+      - name: Deploy
+        run: |
+          gcloud run deploy teachflow \
+            --source . \
+            --project teachflow-hack-611 \
+            --region us-central1 \
+            --quiet
